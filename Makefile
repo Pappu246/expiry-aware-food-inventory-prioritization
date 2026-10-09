@@ -6,9 +6,9 @@ all: build/fefo
 build:
 	mkdir -p build
 build/fefo: src/main.c src/engine.c include/fefo/engine.h | build
-	$(CC) $(CPPFLAGS) $(CFLAGS) src/main.c src/engine.c -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) src/main.c src/engine.c -lm -o $@
 build/fefo_tests: tests/test_main.c src/engine.c include/fefo/engine.h | build
-	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_main.c src/engine.c -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_main.c src/engine.c -lm -o $@
 test: build/fefo_tests
 	./build/fefo_tests
 clean:

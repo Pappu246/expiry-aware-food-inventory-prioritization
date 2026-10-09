@@ -11,7 +11,7 @@ if ($Test) { $Output = Join-Path $Root "build\fefo_tests.exe"; $Sources = @("tes
 else { $Output = Join-Path $Root "build\fefo.exe"; $Sources = @("src/main.c","src/engine.c") }
 foreach ($Source in $Sources) { if (-not (Test-Path (Join-Path $Root $Source))) { throw "Missing source file: $Source" } }
 Write-Host "Compiler: $($Compiler.Source)"
-$CompilerArgs = $Common + $Sources + @("-o",$Output)
+$CompilerArgs = $Common + $Sources + @("-lm","-o",$Output)
 & $Compiler.Source @CompilerArgs
 if ($LASTEXITCODE -ne 0) { throw "Compilation failed with exit code $LASTEXITCODE" }
 if ($Test) { & $Output; if ($LASTEXITCODE -ne 0) { throw "Tests failed with exit code $LASTEXITCODE" } }

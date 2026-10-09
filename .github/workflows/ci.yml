@@ -22,6 +22,8 @@ jobs:
         run: ./build/fefo demo
       - name: Simulation smoke test
         run: ./build/fefo simulate 100
+      - name: Policy experiment matrix
+        run: ./build/fefo experiment
       - name: Benchmark smoke test
         run: ./build/fefo benchmark
       - name: Archive generated CSV evidence

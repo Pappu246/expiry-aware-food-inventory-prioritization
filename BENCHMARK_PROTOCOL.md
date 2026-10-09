@@ -15,7 +15,7 @@ Do not combine these into one “fastest algorithm” contest.
 
 The CLI currently runs one fixed-seed policy scenario per invocation (seed `20261009`, demand/supply ratio `0.80`, 35 days). The structure benchmark uses independent batch-object arrays for heap and linear FEFO, checks selected IDs in a separate untimed pass, discards one warm-up run per algorithm and size, then records seven raw measured trials. Build timing includes inventory initialization and insertions. The raw CSV contains build and selection/removal seconds; a second CSV contains median, minimum, maximum, and median-based linear/heap selection speedup.
 
-The current executable does **not** export comparator/operation counters, the full multi-seed/three-ratio policy outcome matrix, graphs, or report/presentation/viva files. Raw trials can support later analysis, but a generated CSV or successful smoke test is not by itself a performance conclusion. These remain separate deliverables.
+The `experiment` command exports the full policy matrix at 1,000, 5,000 and 10,000 batches, over ten reproducible seeds and target demand/supply ratios 0.50, 0.80 and 1.00. For every trace, demand/supply totals are fixed before independently replaying the exact same arrivals and demand events against heap-FEFO and FIFO states. It writes 180 raw rows (90 size/ratio/seed traces × two policies) and 18 summary rows containing means and sample standard deviations for supply, demand, fulfillment, shortfall, expired quantity, remaining quantity and FIFO priority inversions. The executable still does not export comparator/operation counters; graphs and report/presentation/viva files are separate submission assets. Do not generalize beyond these synthetic workloads.
 
 ## 2. Shared definitions
 
