@@ -1,0 +1,22 @@
+name: C11 CI
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compiler
+        run: gcc --version
+      - name: Build
+        run: make all
+      - name: Tests
+        run: make test
+      - name: Demo smoke test
+        run: ./build/fefo demo
