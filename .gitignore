@@ -1,29 +1,30 @@
-# Maven build output
-/target/
+# Local build outputs
+/build/
+/bin/
+/obj/
+*.o
+*.obj
+*.exe
+*.out
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
 
-# Generated result output
+# Generated result output; keep curated final result files separately
 /results/generated/
 /results/tmp/
 
-# IDE/editor files
+# IDE/editor
 .idea/
 .vscode/
-*.iml
-.project
-.classpath
-.settings/
+*.code-workspace
 
 # OS files
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Logs and compiled artifacts
+# Logs
 *.log
-*.class
-*.jar
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
