@@ -4,7 +4,7 @@ A dependency-free C11 Data Structures project: a custom binary Min-Heap for FEFO
 
 ## Build on Windows (PowerShell)
 ~~~powershell
-\build.ps1 -Test
+.\build.ps1 -Test
 .\build.ps1
 .\build\fefo.exe demo
 .\build\fefo.exe simulate 1000
