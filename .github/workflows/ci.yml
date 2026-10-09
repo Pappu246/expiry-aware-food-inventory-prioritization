@@ -1,9 +1,9 @@
 name: C11 CI
 on:
   push:
-    branches: [main, dev]
+    branches: [main, dev, "audit/**"]
   pull_request:
-    branches: [main, dev]
+    branches: [main, dev, "audit/**"]
   workflow_dispatch:
 permissions:
   contents: read

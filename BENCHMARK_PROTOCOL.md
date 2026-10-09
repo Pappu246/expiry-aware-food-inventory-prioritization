@@ -11,6 +11,12 @@ There are two distinct experiments:
 
 Do not combine these into one “fastest algorithm” contest.
 
+## Current implementation status
+
+The CLI currently runs one fixed-seed policy scenario per invocation (seed `20261009`, demand/supply ratio `0.80`, 35 days). The structure benchmark checks selected IDs in a separate untimed pass, discards one warm-up run per algorithm and size, then records seven raw measured trials. The CSV contains build and selection/removal seconds.
+
+The current executable does **not** export comparator/operation counters, precomputed median/minimum/maximum summaries, policy outcomes across the full multi-seed/three-ratio matrix, graphs, or report/presentation/viva files. Raw trials can support later analysis, but a generated CSV or successful smoke test is not by itself a performance conclusion. These remain separate deliverables.
+
 ## 2. Shared definitions
 
 - **n:** number of generated batches in a data set.

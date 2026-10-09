@@ -158,6 +158,10 @@ This is a scheduling/prioritization prototype, not a food-safety decision system
 7. README, architecture, benchmark protocol, test evidence, and limitations.
 8. A 20–25-page A-6 report, presentation, and viva preparation.
 
+### Implementation and submission status
+
+At the audited baseline (`dev`, commit `7a6e93da01c29baf7866797ec00f67390f209c65`), the repository contains the C11 CLI, custom heap/hash-table engine, linear FEFO baseline, FIFO simulation, six-test harness, CI, and CSV export commands. It does not yet contain the specified 20–25 page report, presentation, viva notes, saved graphs, benchmark operation counters, precomputed summary statistics, or the full multi-seed/three-ratio policy experiment matrix. Do not mark those items complete until their files/results actually exist and are reviewed. The audit branch expands edge-case tests and improves timer and input validation, but these code changes do not automatically complete the academic deliverables.
+
 ## 14. Source context
 
 The real-world motivation is informed by FSSAI's surplus-food regulations and catering guidance. These sources support expiry-aware records and timely handling; they do not mean this prototype certifies food safety.

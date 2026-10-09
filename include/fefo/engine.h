@@ -26,10 +26,12 @@ bool food_batch_eligible(const FoodBatch *batch,int today);
 int food_batch_compare(const FoodBatch *a,const FoodBatch *b);
 FefoStatus inventory_init(Inventory *inventory,PolicyKind kind);
 void inventory_destroy(Inventory *inventory);
+bool inventory_heap_valid(const Inventory *inventory);
 FefoStatus inventory_add(Inventory *inventory,FoodBatch *batch,int today);
 FoodBatch *inventory_lookup(const Inventory *inventory,const char *id);
 FefoStatus inventory_purge_expired(Inventory *inventory,int today,size_t *purged);
 FefoStatus inventory_earliest(Inventory *inventory,int today,FoodBatch **out);
+/* Zero-initialize out before first use; destroy it before reusing it. */
 FefoStatus inventory_allocate(Inventory *inventory,int request,int today,AllocationResult *out);
 void allocation_result_destroy(AllocationResult *result);
 FefoStatus event_trace_generate(EventTrace *trace,size_t count,int days,uint32_t seed,double demand_ratio);

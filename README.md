@@ -9,6 +9,7 @@ git pull origin dev
 .\build.ps1
 .\build\fefo.exe demo
 .\build\fefo.exe simulate 1000
+.\build\fefo.exe benchmark
 ~~~
 
 ## Build on Linux/macOS
