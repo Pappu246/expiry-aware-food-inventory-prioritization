@@ -109,11 +109,9 @@ for(j=0;j<n;++j){s=inventory_add(&v,&work[j],0);if(s!=FEFO_OK){inventory_destroy
 build=timer_seconds()-start;
 start=timer_seconds();
 for(j=0;j<m;++j){
-FoodBatch *chosen=NULL;size_t index;
-s=inventory_earliest(&v,0,&chosen);
-if(s!=FEFO_OK||!chosen){inventory_destroy(&v);free(base);free(heap_batches);free(linear_batches);return FEFO_ERR_INVALID;}
-for(index=0;index<v.size&&v.items[index]!=chosen;++index){}
-if(index==v.size){inventory_destroy(&v);free(base);free(heap_batches);free(linear_batches);return FEFO_ERR_INVALID;}
+size_t index=best_index(&v,0);FoodBatch *chosen;
+if(index==SIZE_MAX){inventory_destroy(&v);free(base);free(heap_batches);free(linear_batches);return FEFO_ERR_INVALID;}
+chosen=v.items[index];
 chosen->quantity=0;chosen->status=BATCH_EXHAUSTED;remove_at(&v,index);
 }
 select=timer_seconds()-start;
