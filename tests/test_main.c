@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <stdlib.h>
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"FAIL line %d: %s\n",__LINE__,#x);return false;}}while(0)
 static bool test_batch(void){FoodBatch a,b;CHECK(food_batch_init(&a,"A","Pool",1,0,2)==FEFO_OK);CHECK(food_batch_init(&b,"B","Pool",1,0,4)==FEFO_OK);CHECK(food_batch_compare(&a,&b)<0);CHECK(food_batch_eligible(&a,2));CHECK(!food_batch_eligible(&a,3));CHECK(food_batch_init(&a," ","Pool",1,0,2)==FEFO_ERR_INVALID);return true;}
 static bool test_heap(void){FoodBatch b[4];Inventory v={0};FoodBatch *e=NULL;CHECK(inventory_init(&v,POLICY_HEAP_FEFO)==FEFO_OK);CHECK(food_batch_init(&b[0],"D","Pool",1,0,7)==FEFO_OK);CHECK(food_batch_init(&b[1],"B","Pool",1,0,2)==FEFO_OK);CHECK(food_batch_init(&b[2],"A","Pool",1,0,2)==FEFO_OK);CHECK(food_batch_init(&b[3],"C","Pool",1,0,3)==FEFO_OK);for(size_t i=0;i<4;++i)CHECK(inventory_add(&v,&b[i],0)==FEFO_OK);CHECK(inventory_heap_valid(&v));CHECK(inventory_earliest(&v,0,&e)==FEFO_OK);CHECK(!strcmp(e->id,"A"));inventory_destroy(&v);return true;}
