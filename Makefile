@@ -11,5 +11,9 @@ build/fefo_tests: tests/test_main.c src/engine.c include/fefo/engine.h | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_main.c src/engine.c -lm -o $@
 test: build/fefo_tests
 	./build/fefo_tests
+build/fefo_tests_sanitize: tests/test_main.c src/engine.c include/fefo/engine.h | build
+	$(CC) $(CPPFLAGS) -std=c11 -Wall -Wextra -Wpedantic -Werror -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer tests/test_main.c src/engine.c -lm -o $@
+test-sanitize: build/fefo_tests_sanitize
+	ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 UBSAN_OPTIONS=halt_on_error=1 ./build/fefo_tests_sanitize
 clean:
 	rm -rf build

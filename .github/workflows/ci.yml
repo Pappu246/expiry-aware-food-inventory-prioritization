@@ -18,6 +18,8 @@ jobs:
         run: make all
       - name: Tests
         run: make test
+      - name: AddressSanitizer and UndefinedBehaviorSanitizer
+        run: make test-sanitize
       - name: Demo smoke test
         run: ./build/fefo demo
       - name: Simulation smoke test

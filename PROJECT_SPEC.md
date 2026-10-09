@@ -160,7 +160,7 @@ This is a scheduling/prioritization prototype, not a food-safety decision system
 
 ### Implementation and submission status
 
-At the audited branch head, the repository contains the C11 CLI, custom heap/hash-table engine, linear FEFO baseline, FIFO simulation, eleven-test harness, CI, raw/summary benchmark CSV export and the full 10-seed / three-ratio policy experiment command. The generated report, slide deck, viva notes and figures are available separately in the submission package. Comparator/operation counters, sanitizer evidence and merging the isolated audit branch remain future work. Faculty-specific report/template compliance still needs confirmation.
+At the audited branch head, the repository contains the C11 CLI, custom heap/hash-table engine, linear FEFO baseline, FIFO simulation, eleven-test harness, CI, raw/summary benchmark CSV export and the full 10-seed / three-ratio policy experiment command. The generated report, slide deck, viva notes and figures are available separately in the submission package. Comparator/operation counters, allocation-failure injection and merging the isolated audit branch remain future work. The 12-seed randomized differential suite and sanitizer CI step are implemented; their latest CI status determines whether they are verified. Faculty-specific report/template compliance still needs confirmation.
 
 ## 14. Source context
 

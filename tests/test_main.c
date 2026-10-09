@@ -27,5 +27,43 @@ static bool test_fifo_control_alignment(void){EventTrace t={0};SimulationResult 
 for(i=0;i<6U;++i)t.demands[i].day=(int)i;
 t.demands[1].quantity=1;
 CHECK(simulation_run(&t,POLICY_HEAP_FEFO,&h)==FEFO_OK);CHECK(simulation_run(&t,POLICY_FIFO,&f)==FEFO_OK);CHECK(h.supply==f.supply&&h.demand==f.demand&&h.fulfilled==f.fulfilled&&h.shortfall==f.shortfall&&h.expired==f.expired&&h.remaining==f.remaining);CHECK(h.expired==3&&h.remaining==0&&h.priority_inversions==0U&&f.priority_inversions==0U);event_trace_destroy(&t);return true;}
+
+static uint32_t test_rng_next(uint32_t *state){uint32_t x=*state;x^=x<<13;x^=x>>17;x^=x<<5;return *state=x;}
+static bool test_randomized_differential(void){
+enum { BATCHES=64, SEEDS=12 };
+uint32_t seed;
+for(seed=1U;seed<=SEEDS;++seed){
+FoodBatch heap_batches[BATCHES],linear_batches[BATCHES];
+Inventory heap={0},linear={0};
+AllocationResult hr={0},lr={0};
+uint32_t state=UINT32_C(0x5eed1234)^seed;
+size_t i,steps=0U;bool both_empty=false;
+CHECK(inventory_init(&heap,POLICY_HEAP_FEFO)==FEFO_OK);
+CHECK(inventory_init(&linear,POLICY_LINEAR_FEFO)==FEFO_OK);
+for(i=0;i<BATCHES;++i){
+char id[FEFO_BATCH_ID_CAP];int received=(int)(test_rng_next(&state)%12U);int expiry=received+(int)(test_rng_next(&state)%12U);int quantity=1+(int)(test_rng_next(&state)%4U);
+(void)snprintf(id,sizeof(id),"R%02u-%03zu",(unsigned)seed,i);
+CHECK(food_batch_init(&heap_batches[i],id,"Random test pool",quantity,received,expiry)==FEFO_OK);
+linear_batches[i]=heap_batches[i];
+CHECK(inventory_add(&heap,&heap_batches[i],0)==FEFO_OK);
+CHECK(inventory_add(&linear,&linear_batches[i],0)==FEFO_OK);
+}
+while(steps<=(size_t)(BATCHES*4)){
+FefoStatus hs=inventory_allocate(&heap,1,0,&hr);
+FefoStatus ls=inventory_allocate(&linear,1,0,&lr);
+CHECK(hs==FEFO_OK&&ls==FEFO_OK);
+CHECK(hr.fulfilled==lr.fulfilled&&hr.shortfall==lr.shortfall&&hr.line_count==lr.line_count&&hr.outcome==lr.outcome);
+if(hr.line_count==1U)CHECK(strcmp(hr.lines[0].batch_id,lr.lines[0].batch_id)==0&&hr.lines[0].quantity==lr.lines[0].quantity);
+CHECK(inventory_heap_valid(&heap));
+++steps;
+if(hr.fulfilled==0&&lr.fulfilled==0){both_empty=true;break;}
+}
+CHECK(both_empty);
+allocation_result_destroy(&hr);allocation_result_destroy(&lr);
+inventory_destroy(&heap);inventory_destroy(&linear);
+}
+return true;
+}
+
 static int run(const char *name,bool(*fn)(void)){if(fn()){printf("[PASS] %s\n",name);return 0;}fprintf(stderr,"[FAIL] %s\n",name);return 1;}
-int main(void){int n=0;n+=run("batch validation and FEFO order",test_batch);n+=run("heap ordering and tie-break",test_heap);n+=run("duplicate IDs and expiry boundary",test_duplicate_and_expiry);n+=run("partial allocation and shortfall",test_allocation);n+=run("hash table growth and lookup",test_hash_growth);n+=run("fixed-seed simulation reproducibility",test_simulation);n+=run("invalid input and NaN rejection",test_validation_edges);n+=run("empty inventory and request shortfall",test_empty_inventory);n+=run("hash collision probing",test_hash_collision);n+=run("FEFO versus FIFO expiry divergence",test_fifo_policy_divergence);n+=run("FEFO/FIFO aligned-order control",test_fifo_control_alignment);printf("Tests: %d/11 passed\\n",11-n);return n?1:0;}
+int main(void){int n=0;n+=run("batch validation and FEFO order",test_batch);n+=run("heap ordering and tie-break",test_heap);n+=run("duplicate IDs and expiry boundary",test_duplicate_and_expiry);n+=run("partial allocation and shortfall",test_allocation);n+=run("hash table growth and lookup",test_hash_growth);n+=run("fixed-seed simulation reproducibility",test_simulation);n+=run("invalid input and NaN rejection",test_validation_edges);n+=run("empty inventory and request shortfall",test_empty_inventory);n+=run("hash collision probing",test_hash_collision);n+=run("FEFO versus FIFO expiry divergence",test_fifo_policy_divergence);n+=run("FEFO/FIFO aligned-order control",test_fifo_control_alignment);n+=run("12-seed randomized heap/linear differential",test_randomized_differential);printf("Tests: %d/12 passed\\n",12-n);return n?1:0;}
