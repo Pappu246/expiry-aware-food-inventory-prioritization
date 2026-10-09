@@ -2,278 +2,260 @@
 
 ## 1. Purpose
 
-This protocol defines how results are generated and reported. Its purpose is to prevent misleading comparisons, policy feedback effects, inconsistent expiry rules, and timing measurements contaminated by input/output.
+This protocol prevents unfair comparisons, inconsistent expiry rules, strategy-dependent demand, and timing contaminated by I/O.
 
-There are two separate experiments:
+There are two distinct experiments:
 
-- **Experiment A — Data-structure effect:** heap-based FEFO versus linear-scan FEFO. Both implement the same policy.
-- **Experiment B — Policy effect:** FEFO versus FIFO. This compares stock-rotation outcomes, not raw speed.
+- **Experiment A — Data-structure effect:** custom heap FEFO versus linear-scan FEFO. Same selection policy.
+- **Experiment B — Policy effect:** FEFO versus FIFO. Compare operational outcomes, not just speed.
 
-Never combine the two into a single “fastest algorithm” ranking.
+Do not combine these into one “fastest algorithm” contest.
 
 ## 2. Shared definitions
 
-- **n:** number of generated batches in a dataset.
-- **m:** number of extraction/allocation operations in a structure benchmark trial.
+- **n:** number of generated batches in a data set.
+- **m:** number of selection/removal operations in a structure benchmark trial.
 - **today:** integer simulation day.
-- **Eligible batch:** status ACTIVE, quantity > 0, and today <= expiryDay.
-- **Expired batch:** today > expiryDay.
-- **Priority order:** expiryDay ascending, then receivedDay ascending, then batchId lexicographically ascending.
-- **Supply:** sum of quantities arriving in the trace.
-- **Demand:** sum of requested quantities in the trace.
+- **Eligible:** ACTIVE, quantity > 0, and today <= expiry day.
+- **Expired:** today > expiry day.
+- **FEFO order:** expiry day ascending, received day ascending, then batch ID lexicographically ascending.
+- **Supply:** total quantity in arrivals.
+- **Demand:** total requested quantity.
 - **Demand/supply ratio:** total requested quantity divided by total arriving quantity, targeted at 0.50, 0.80, or 1.00.
 
-A batch is still eligible on its expiry day and becomes expired on the following day. This boundary must be identical in all policies, the simulator, tests, and report.
+A batch remains eligible on its expiry day and expires on the next day. Use this same boundary everywhere.
 
 ## 3. Experiment A — Data-structure effect
 
 ### Question
 
-For the same FEFO selection rule, how does a custom Min-Heap compare with an unsorted linear scan for repeatedly selecting and removing the earliest-expiring batch?
+For the same FEFO rule, how does a custom Min-Heap compare with an unsorted linear scan when repeatedly selecting and removing the earliest-expiring batch?
 
 ### Algorithms
 
 **A1: Linear-scan FEFO**
-- Store batches in an unsorted list.
-- For each operation, scan all active eligible batches and select the minimum under the frozen priority order.
-- After selecting the minimum, remove the selected list element by replacing it with the last element and truncating the last position. The list remains deliberately unsorted.
+- Keep batches in an unsorted dynamic array.
+- For every operation, scan active eligible batches and select the minimum using the frozen comparator.
+- Remove a selected entry with swap-with-last and decrement the array length. Do not shift all following elements.
 
 **A2: Heap FEFO**
-- Store the same logical batches in the custom Min-Heap.
-- For each operation, select and extract the minimum.
+- Keep the same logical batches in the custom Min-Heap.
+- Select and extract the minimum for every operation.
 
-Both implementations must return the same batch ID sequence for the same initial dataset and operation trace. A separate correctness run verifies this; correctness checking and output printing are not included in elapsed-time measurements.
+Both must generate the same selected batch ID sequence from the same data. Run an untimed differential correctness check.
 
 ### Dataset sizes
 
-Run with:
-
+Use:
 - 1,000 batches
 - 5,000 batches
 - 10,000 batches
 - 50,000 batches
 - 100,000 batches
 
-Each benchmark dataset is a single homogeneous stock pool. For this specific extraction workload, each batch has quantity 1 so each successful operation removes one selected batch. All batches begin unexpired. The workload isolates priority selection/removal; it does not model daily food demand.
+This is a synthetic stress benchmark, not a claim that every campus canteen manages 100,000 distinct batches.
 
-### Workload size
+For this extraction workload, set each batch quantity to one and begin with all batches unexpired. This isolates priority selection/removal; it does not simulate food demand.
 
-Set **m = min(200, n)** extraction operations per timed trial. With the required dataset sizes, m is 200. This intentionally caps the quadratic scan work at the largest dataset.
+### Workload
 
-Generate unique batch IDs and varied received/expiry days from a documented fixed seed. Include some repeated expiry days to exercise deterministic tie-breaking. Every expiry day must be greater than or equal to received day and greater than the starting day.
+Set m = min(200, n) extraction operations per measured trial. Generate unique batch IDs, varied received/expiry days, and some repeated expiry days to exercise tie-breaking. Expiry must not precede receipt or the benchmark start day.
 
 ### Measurements
 
 Record separately:
+1. Initial build time to construct the list/heap.
+2. Time for m selection/removal operations.
+3. Comparator count.
+4. Heap comparisons, swaps, insertions, and extractions as appropriate.
+5. Selected-sequence equality in the separate correctness run.
 
-1. **Initial build time** to construct the heap or the unsorted list from the same batch input. Do not mix it into extraction time.
-2. **Extraction workload time** for m operations.
-3. **Comparator count**.
-4. **Heap comparisons, swaps, insertions and extractions**, where applicable.
-5. **Selected batch sequence equality** in an untimed correctness run.
-
-Report median runtime and trial range. Do not claim the heap wins every individual run; timing noise and small datasets may obscure differences.
+Do not include data generation or CSV output in timed regions.
 
 ### Timing procedure
 
-For each algorithm and dataset size:
-
-1. Generate the input outside the timed region.
-2. Use fresh, independent batch objects for each strategy.
-3. Construct the data structure outside the extraction timer; separately time and report construction/building.
+For each algorithm and data set size:
+1. Generate data outside the timed region.
+2. Use fresh independent batch objects for each strategy.
+3. Construct the structure outside the extraction timer; report build time separately.
 4. Run one warm-up trial.
 5. Run seven measured trials.
-6. Measure with Java System.nanoTime().
-7. Run no console output, file I/O, CSV writing, graph creation, random generation, or correctness-oracle scan inside the timed region.
-8. Report the median of the seven measured trials, along with the minimum and maximum.
-9. Keep the machine, JDK version, power mode and other running workload as consistent as reasonably possible.
+6. Use an appropriate high-resolution timer for the operating system. Aggregate many operations instead of trusting single-operation timing.
+7. Do not print, perform file I/O, generate random values, or run oracle comparisons inside timed regions.
+8. Report median, minimum, and maximum.
+9. Keep machine, compiler version, optimization flags, power mode, and background workload as consistent as reasonably possible.
 
-Operation counters can add overhead. Prefer one timing mode with counters disabled and one separate instrumentation mode for counting operations. State this in the report.
+Operation counters can add overhead. Perform one timing run without counters and a separate instrumented run for counts.
 
 ### Structure experiment output
 
-Produce one CSV row per algorithm, dataset size, and measured trial, including:
-
-- dataset size n
-- workload size m
+Export a CSV row per algorithm, data set size, and trial with:
+- n
+- m
 - algorithm
-- seed
-- trial number
+- random seed
+- trial
 - build time
-- extraction time
+- selection/removal time
 - comparator/operation counts from the instrumented run
-- selected-sequence equivalence status from the separate correctness run
+- correctness-equivalence status from the separate run
 
-Do not put invented or pre-filled timing values into the CSV.
+Only real measured values belong in final result files.
 
 ## 4. Experiment B — Policy effect
 
 ### Question
 
-Under the same controlled inventory arrivals and demand, how do FEFO and FIFO differ in fulfilled demand, shortfall, expired quantity, and final unexpired stock?
+Under identical inventory arrivals and demand, how do FEFO and FIFO differ in fulfilled demand, shortfall, expired quantity, and unexpired stock remaining?
 
 ### Policies
 
-- **FEFO:** always choose the earliest-expiring eligible batch, using the frozen total order.
-- **FIFO:** choose the oldest-received eligible batch, breaking same-day ties by batch ID.
+- **FEFO:** selects the earliest-expiring eligible batch with the frozen comparator.
+- **FIFO:** selects the oldest received eligible batch, with batch ID as a deterministic same-day tie-break.
 
-FEFO is implemented with the Min-Heap; FIFO is implemented with an arrival-ordered queue. FIFO queue operations themselves may be O(1), but removing expired entries that are inside the queue can require a linear filtering pass. Do not describe overall FIFO allocation or expiry maintenance as unconditionally O(1).
+FIFO queue push/pop operations are O(1), but an expiry-maintenance pass must find expired entries wherever they occur in arrival order and may take O(n). Do not claim the whole FIFO policy is unconditionally O(1).
 
-### Simulation sizes and repetitions
+### Simulation sizes
 
-Use 1,000, 5,000, and 10,000 batches for the policy experiment. The structure benchmark separately covers up to 100,000 batches.
+Use 1,000, 5,000, and 10,000 batches for policy simulation. The structure benchmark separately reaches 100,000 batches.
 
-For each size, generate at least 10 fixed seeds and run these target total demand/supply ratios:
-
+For each size, use at least 10 reproducible seeds and demand/supply ratios:
 - 50%
 - 80%
 - 100%
 
-These ratios describe total requested quantity over the full trace, not a promise that each daily request can be fulfilled.
+The ratios are totals over the horizon, not guarantees that each daily request will be fulfilled.
 
-### Generate one immutable event trace
+### Immutable event trace
 
-For each seed and scenario, generate arrivals and demands once, then replay that exact trace against independent copies of both policies.
+For each seed/scenario, generate arrivals and demands once and replay the exact same trace against independent policy states.
 
-Each arrival contains:
+Arrival fields:
 - batch ID
 - integer quantity
 - received day
 - expiry day
 
-Each demand contains:
+Demand fields:
 - day
 - integer requested quantity
 
-Requirements:
-- Demand is exogenous and does not react to prior allocations or shortfalls.
-- Shortfalls are recorded and are not re-queued.
-- The same batches, arrival order, quantities, expiry days, demand dates and quantities go to both policies.
-- Use varied shelf lives for scenarios where FEFO and FIFO can differ.
-- Include a control scenario where expiry order follows arrival order; FEFO and FIFO should agree on selection when all other tie rules align.
-- Use a documented fixed seed for reproducibility.
+Rules:
+- Demand is exogenous; it never changes based on prior allocations or shortfalls.
+- Shortfalls are recorded and not re-queued.
+- Both policies receive the same batches, quantities, dates, arrivals, demand events, and day order.
+- Include variable shelf lives so expiry order sometimes differs from arrival order.
+- Include a control scenario where arrival order and expiry order align, so policies can agree.
+- Use a fixed, documented random seed.
+- Use a documented 30–40 day simulation horizon or another fixed horizon chosen before running experiments.
 
-A practical synthetic trace can use a 30–40 day horizon, arrivals spread over the early part of the horizon, varied positive shelf lives, integer batch quantities, and daily demand totals generated to meet the selected overall ratio. Choose the horizon so expiries are processed before the final report; report remaining unexpired stock separately if any remains.
+### Fixed daily order
 
-### Fixed daily event order
+1. Add arrivals.
+2. Account for and remove batches that are now expired.
+3. Process demand.
 
-Every simulation day must use this order:
-
-1. Add that day's arrivals.
-2. Account for and remove batches that became expired, using the strict rule today > expiryDay.
-3. Process that day's demand requests.
-
-Because the rule is strict, a batch with expiryDay equal to today may still be allocated on that day.
+Expiry is strict: a batch with expiryDay equal to today is still eligible today.
 
 ### Independent waste accounting
 
-The simulation coordinator must use the same accounting routine for each policy.
+One shared accounting function must apply equally to each policy. On each expiry event, before policy-specific removal:
+- find each active batch with positive remaining quantity whose expiry day is earlier than today;
+- record its remaining quantity as expired exactly once;
+- mark it EXPIRED;
+- remove it from that policy's active selection structure while preserving remaining policy order.
 
-At the expiry event, before strategy-specific removal:
-- inspect the policy's remaining batch state;
-- if a batch is ACTIVE, has positive remaining quantity, and today > expiryDay, record that remaining quantity as expired waste exactly once;
-- mark that batch EXPIRED;
-- remove it from the policy's active structure while preserving the policy's remaining ordering rules.
-
-The FEFO heap can purge expired roots because expiry is the first heap key. The FIFO baseline must filter any expired entries wherever they occur and preserve the relative order of remaining eligible entries. The linear implementation must remove expired entries using the same expiry boundary.
-
-Do not calculate waste as “number of items the heap popped.” That would measure implementation behavior rather than the stock quantity that actually expired.
+Do not count waste by the number of heap/queue removals. That would count implementation behavior rather than actual expired quantity and could bias results.
 
 ### Policy metrics
 
-For each run, record:
-
+Record:
 - total arriving quantity
 - total requested quantity
-- fulfilled quantity
-- shortfall quantity
-- expired/wasted quantity
-- unexpired remaining quantity at the end
+- total fulfilled quantity
+- total shortfall
+- expired quantity
+- remaining unexpired quantity at the horizon end
 - completed request count
-- FIFO priority-inversion count and rate
+- FIFO priority-inversion count/rate
 
-**Priority inversion** is a diagnostic: a FIFO allocation is an inversion when another currently eligible batch with an earlier expiry existed at the moment the FIFO allocation was made. It is defined using the FEFO rule, so label it as a diagnostic rather than an independent proof that FEFO is superior.
+A **priority inversion** is a FIFO allocation made while another currently eligible batch with an earlier expiry existed. Label this a diagnostic rather than independent proof of FEFO superiority because it is defined relative to FEFO's rule.
 
-Do not claim that FEFO must reduce waste in every workload. With aligned arrival and expiry order, both policies may have the same outcomes. Report the simulation assumptions with the outcomes.
+Do not claim FEFO reduces waste in every workload. If arrival and expiry orders align, the policies may produce the same outcome.
 
 ## 5. Correctness tests, not performance metrics
 
-“FEFO priority correctness” is a correctness criterion, not a useful performance metric. The heap will be checked against the linear oracle for every allocation decision in differential tests. Also run a Min-Heap invariant test after structural changes in test/debug mode.
+“FEFO priority correctness” is a test, not a performance metric. Compare every heap FEFO choice against the independent linear FEFO oracle in differential tests. Also validate the heap invariant after structural modifications in test mode.
 
 Report:
-- total differential decisions checked
+- differential decisions checked
 - mismatches
 - heap invariant failures
 - edge cases passed/failed
 
-Expected acceptance result is zero mismatches and zero invariant failures. Do not call this an empirical model accuracy score.
+The acceptance target is zero mismatches and zero invariant failures. Do not call this a machine-learning accuracy score.
 
-## 6. Required edge-case scenarios
-
-The test suite must cover:
+## 6. Required edge cases
 
 1. Empty inventory.
 2. One batch.
 3. Different expiry days.
-4. Equal expiry days.
-5. Equal expiry and receipt day, resolved by batch ID.
-6. Expiry-day boundary: today equals expiry day.
-7. Expired boundary: today is after expiry day.
-8. One or more expired heap roots.
-9. Partial allocation that leaves quantity positive.
-10. Allocation that exactly exhausts a batch.
-11. Request larger than eligible stock.
+4. Equal expiry dates.
+5. Equal expiry/receipt day with batch-ID tie-break.
+6. Today equals expiry day.
+7. Today is after expiry day.
+8. Multiple expired heap roots.
+9. Partial allocation leaving quantity positive.
+10. Allocation exactly exhausts a batch.
+11. Request greater than available eligible stock.
 12. Duplicate batch ID.
 13. Zero and negative quantity rejection.
 14. Expiry earlier than receipt day.
-15. No eligible stock after expiry cleanup.
-16. Repeated allocation requests.
-17. Control simulation where FIFO and FEFO agree.
-18. Scenario where FIFO consumes later-expiring stock while an earlier-expiring eligible batch exists.
-19. Reproducibility: same seed produces identical trace and outcome.
-20. Independent waste accounting counts each expired remaining quantity once.
+15. No stock after expired items are purged.
+16. Repeated allocations.
+17. Control scenario where FIFO and FEFO agree.
+18. Scenario where FIFO selects a later-expiring batch while an earlier-expiring eligible batch exists.
+19. Fixed seed reproduces the same trace/outcome.
+20. Expired quantity is accounted exactly once.
 
-## 7. Recommended graphs and tables
+## 7. Required graphs/tables
 
-At minimum, prepare these report artifacts after real experiments:
-
-1. Median extraction time vs batch count: linear FEFO and heap FEFO.
-2. Comparator count vs batch count: linear FEFO and heap FEFO.
-3. Initial build time vs batch count.
-4. Observed speedup (linear time divided by heap time) vs batch count, with actual values.
+1. Median selection/removal time vs n: linear FEFO and heap FEFO.
+2. Comparator count vs n.
+3. Initial build time vs n.
+4. Observed speedup (linear time divided by heap time), using actual values.
 5. Expired quantity by policy and demand/supply ratio.
 6. Fulfilled quantity and shortfall by policy.
 7. Remaining unexpired quantity by policy.
-8. Results summary across seeds (mean and standard deviation for policy metrics).
-9. Correctness/edge-case test summary.
+8. Policy outcome summaries across seeds, including mean and standard deviation.
+9. Correctness and edge-case test summary.
 
-Use actual measured values only. Do not fit a theoretical complexity curve to a handful of points or present a synthetic expected outcome as a measured result.
+Do not hard-code example numbers. Do not claim expected results are measured results. Do not infer theoretical complexity by fitting a curve to only a few measurements.
 
 ## 8. Reproducibility record
 
-Every final result set must include:
-
-- Git commit or source version
-- JDK version
-- OS and relevant machine details
-- dataset size
+For the final report, record:
+- Git commit/source version
+- compiler name/version
+- OS and machine details
+- compiler optimization flags
+- data set size
 - seed
-- m for structure benchmark
-- demand/supply ratio and horizon for policy simulation
-- number of timing warm-ups and measured trials
-- timing statistic reported
+- m for the structure benchmark
+- demand/supply ratio and simulation horizon for policy experiments
+- warm-up and measured trial counts
+- timing statistic
 - whether operation counters were enabled
 
 ## 9. Acceptance criteria
 
-The benchmark is ready for the report only when:
-
-- FEFO heap and linear FEFO produce identical choices for identical traces.
-- Heap invariant tests pass.
-- All tested policies use identical inputs per scenario.
-- Waste is accounted independently and once per batch.
-- The expiry boundary and day-event order are consistent.
-- Timed sections contain no I/O or graph creation.
-- Runtime and operation-count runs are separated where instrumentation changes runtime.
-- Results are exported and reproducible from documented seeds.
-- Limitations and simulation assumptions are reported honestly.
+The experiment is ready to report only when:
+- heap FEFO and linear FEFO produce identical choices on identical traces;
+- heap invariants pass;
+- policies replay identical input traces;
+- waste is accounted independently and exactly once;
+- expiry boundary/day order is consistent;
+- timed regions contain no I/O or graph creation;
+- timing and operation-count runs are separated where needed;
+- results are exported and reproducible from the documented seed;
+- synthetic simulation assumptions and limitations are disclosed honestly.
