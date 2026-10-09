@@ -28,6 +28,8 @@ jobs:
         run: ./build/fefo experiment
       - name: Benchmark smoke test
         run: ./build/fefo benchmark
+      - name: Instrumented operation counts (separate from timing)
+        run: make operations
       - name: Archive generated CSV evidence
         if: always()
         uses: actions/upload-artifact@v4

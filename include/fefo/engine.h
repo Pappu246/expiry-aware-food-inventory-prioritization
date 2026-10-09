@@ -19,6 +19,7 @@ typedef struct { int day; char batch_id[FEFO_BATCH_ID_CAP]; char item[FEFO_ITEM_
 typedef struct { int day, quantity; } DemandEvent;
 typedef struct { ArrivalEvent *arrivals; size_t arrival_count; DemandEvent *demands; size_t demand_count; int horizon_days; uint32_t seed; double demand_ratio; long long total_supply, total_demand; } EventTrace;
 typedef struct { PolicyKind policy; long long supply, demand, fulfilled, shortfall, expired, remaining; size_t expired_batches, completed_requests, requests, priority_inversions; } SimulationResult;
+typedef struct { uint64_t comparisons, heap_swaps, insertions, removals, heap_extractions; } FefoOperationMetrics;
 const char *fefo_status_string(FefoStatus status);
 const char *policy_name(PolicyKind kind);
 FefoStatus food_batch_init(FoodBatch *out,const char *id,const char *item,int quantity,int received_day,int expiry_day);
@@ -40,4 +41,8 @@ FefoStatus simulation_run(const EventTrace *trace,PolicyKind policy,SimulationRe
 void simulation_csv_header(FILE *stream);
 void simulation_csv_row(FILE *stream,const EventTrace *trace,const SimulationResult *result);
 FefoStatus benchmark_structure(FILE *raw_stream,FILE *summary_stream);
+void fefo_metrics_reset(void);
+void fefo_metrics_enable(bool enabled);
+FefoOperationMetrics fefo_metrics_snapshot(void);
+FefoStatus benchmark_operation_counts(FILE *stream);
 #endif

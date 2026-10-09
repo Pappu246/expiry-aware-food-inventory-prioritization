@@ -8,12 +8,39 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
+#ifdef FEFO_ENABLE_OPERATION_METRICS
+static bool metrics_enabled=false;
+static FefoOperationMetrics operation_metrics;
+#define METRIC_INC(field) do { if(metrics_enabled) ++operation_metrics.field; } while(0)
+#else
+#define METRIC_INC(field) ((void)0)
+#endif
+void fefo_metrics_reset(void){
+#ifdef FEFO_ENABLE_OPERATION_METRICS
+memset(&operation_metrics,0,sizeof(operation_metrics));
+#endif
+}
+void fefo_metrics_enable(bool enabled){
+#ifdef FEFO_ENABLE_OPERATION_METRICS
+metrics_enabled=enabled;
+#else
+(void)enabled;
+#endif
+}
+FefoOperationMetrics fefo_metrics_snapshot(void){
+#ifdef FEFO_ENABLE_OPERATION_METRICS
+return operation_metrics;
+#else
+FefoOperationMetrics empty={0};
+return empty;
+#endif
+}
 const char *fefo_status_string(FefoStatus s){switch(s){case FEFO_OK:return "ok";case FEFO_ERR_INVALID:return "invalid input";case FEFO_ERR_DUPLICATE:return "duplicate batch ID";case FEFO_ERR_NOMEM:return "out of memory";case FEFO_ERR_EMPTY:return "no eligible stock";default:return "unknown error";}}
 const char *policy_name(PolicyKind p){switch(p){case POLICY_HEAP_FEFO:return "FEFO_MIN_HEAP";case POLICY_LINEAR_FEFO:return "FEFO_LINEAR_SCAN";case POLICY_FIFO:return "FIFO";default:return "UNKNOWN";}}
 static bool blank(const char *s){const unsigned char *p=(const unsigned char*)s;if(!s||!*s)return true;while(*p){if(!isspace(*p))return false;++p;}return true;}
 FefoStatus food_batch_init(FoodBatch *b,const char *id,const char *item,int q,int received,int expiry){size_t ni,nn;if(!b||!id||!item||blank(id)||blank(item)||q<=0||received<0||expiry<received)return FEFO_ERR_INVALID;ni=strlen(id);nn=strlen(item);if(ni>=sizeof(b->id)||nn>=sizeof(b->item))return FEFO_ERR_INVALID;memset(b,0,sizeof(*b));memcpy(b->id,id,ni+1U);memcpy(b->item,item,nn+1U);b->quantity=q;b->received_day=received;b->expiry_day=expiry;b->status=BATCH_ACTIVE;return FEFO_OK;}
 bool food_batch_eligible(const FoodBatch *b,int today){return b&&b->status==BATCH_ACTIVE&&b->quantity>0&&today>=0&&today<=b->expiry_day;}
-int food_batch_compare(const FoodBatch *a,const FoodBatch *b){int c;if(a==b)return 0;if(!a)return 1;if(!b)return -1;if(a->expiry_day!=b->expiry_day)return a->expiry_day<b->expiry_day?-1:1;if(a->received_day!=b->received_day)return a->received_day<b->received_day?-1:1;c=strcmp(a->id,b->id);return (c>0)-(c<0);}
+int food_batch_compare(const FoodBatch *a,const FoodBatch *b){int c;METRIC_INC(comparisons);if(a==b)return 0;if(!a)return 1;if(!b)return -1;if(a->expiry_day!=b->expiry_day)return a->expiry_day<b->expiry_day?-1:1;if(a->received_day!=b->received_day)return a->received_day<b->received_day?-1:1;c=strcmp(a->id,b->id);return (c>0)-(c<0);}
 static uint64_t hash_id(const char *s){uint64_t h=UINT64_C(14695981039346656037);const unsigned char *p=(const unsigned char*)s;while(*p){h^=*p++;h*=UINT64_C(1099511628211);}return h;}
 static size_t slot_of(const char *id,size_t cap){return (size_t)(hash_id(id)&(uint64_t)(cap-1U));}
 FoodBatch *inventory_lookup(const Inventory *v,const char *id){size_t s,n;if(!v||!id||!v->map_capacity||!v->slots)return NULL;s=slot_of(id,v->map_capacity);for(n=0;n<v->map_capacity;++n){FoodBatch *b=v->slots[s].batch;if(!b)return NULL;if(strcmp(b->id,id)==0)return b;s=(s+1U)&(v->map_capacity-1U);}return NULL;}
@@ -23,11 +50,11 @@ static FefoStatus map_insert(Inventory *v,FoodBatch *b){size_t s;FefoStatus e=ma
 static FefoStatus reserve_items(Inventory *v,size_t need){size_t cap;FoodBatch **p;if(need<=v->capacity)return FEFO_OK;cap=v->capacity?v->capacity:16U;while(cap<need){if(cap>SIZE_MAX/2U){cap=need;break;}cap*=2U;}if(cap>SIZE_MAX/sizeof(*p))return FEFO_ERR_NOMEM;p=realloc(v->items,cap*sizeof(*p));if(!p)return FEFO_ERR_NOMEM;v->items=p;v->capacity=cap;return FEFO_OK;}
 FefoStatus inventory_init(Inventory *v,PolicyKind kind){if(!v||(kind!=POLICY_HEAP_FEFO&&kind!=POLICY_LINEAR_FEFO&&kind!=POLICY_FIFO))return FEFO_ERR_INVALID;memset(v,0,sizeof(*v));v->kind=kind;v->slots=calloc(16U,sizeof(*v->slots));if(!v->slots)return FEFO_ERR_NOMEM;v->map_capacity=16U;return FEFO_OK;}
 void inventory_destroy(Inventory *v){if(v){free(v->items);free(v->slots);memset(v,0,sizeof(*v));}}
-static void sift_up(Inventory *v,size_t i){while(i){size_t p=(i-1U)/2U;if(food_batch_compare(v->items[p],v->items[i])<=0)break;{FoodBatch *t=v->items[p];v->items[p]=v->items[i];v->items[i]=t;}i=p;}}
-static void sift_down(Inventory *v,size_t i){for(;;){size_t l=i*2U+1U,r=l+1U,b=i;FoodBatch *t;if(l>=v->size)break;if(food_batch_compare(v->items[l],v->items[b])<0)b=l;if(r<v->size&&food_batch_compare(v->items[r],v->items[b])<0)b=r;if(b==i)break;t=v->items[i];v->items[i]=v->items[b];v->items[b]=t;i=b;}}
-static void remove_at(Inventory *v,size_t i){if(!v||i>=v->size)return;if(v->kind==POLICY_HEAP_FEFO){--v->size;if(i<v->size){v->items[i]=v->items[v->size];if(i&&food_batch_compare(v->items[i],v->items[(i-1U)/2U])<0)sift_up(v,i);else sift_down(v,i);}}else if(v->kind==POLICY_FIFO){if(i+1U<v->size)memmove(&v->items[i],&v->items[i+1U],(v->size-i-1U)*sizeof(*v->items));--v->size;}else{v->items[i]=v->items[v->size-1U];--v->size;}}
+static void sift_up(Inventory *v,size_t i){while(i){size_t p=(i-1U)/2U;if(food_batch_compare(v->items[p],v->items[i])<=0)break;{FoodBatch *t=v->items[p];v->items[p]=v->items[i];v->items[i]=t;}METRIC_INC(heap_swaps);i=p;}}
+static void sift_down(Inventory *v,size_t i){for(;;){size_t l=i*2U+1U,r=l+1U,b=i;FoodBatch *t;if(l>=v->size)break;if(food_batch_compare(v->items[l],v->items[b])<0)b=l;if(r<v->size&&food_batch_compare(v->items[r],v->items[b])<0)b=r;if(b==i)break;t=v->items[i];v->items[i]=v->items[b];v->items[b]=t;METRIC_INC(heap_swaps);i=b;}}
+static void remove_at(Inventory *v,size_t i){if(!v||i>=v->size)return;METRIC_INC(removals);if(v->kind==POLICY_HEAP_FEFO){METRIC_INC(heap_extractions);--v->size;if(i<v->size){v->items[i]=v->items[v->size];if(i&&food_batch_compare(v->items[i],v->items[(i-1U)/2U])<0)sift_up(v,i);else sift_down(v,i);}}else if(v->kind==POLICY_FIFO){if(i+1U<v->size)memmove(&v->items[i],&v->items[i+1U],(v->size-i-1U)*sizeof(*v->items));--v->size;}else{v->items[i]=v->items[v->size-1U];--v->size;}}
 bool inventory_heap_valid(const Inventory *v){size_t i;if(!v||v->kind!=POLICY_HEAP_FEFO||v->size>v->capacity||(v->capacity>0U&&!v->items))return false;for(i=0U;i<v->size;++i){if(!v->items[i])return false;if(i>0U&&food_batch_compare(v->items[(i-1U)/2U],v->items[i])>0)return false;}return true;}
-FefoStatus inventory_add(Inventory *v,FoodBatch *b,int today){FefoStatus s;FoodBatch *last;if(!v||!b||today<0||b->id[0]=='\0'||!memchr(b->id,'\0',sizeof(b->id))||!memchr(b->item,'\0',sizeof(b->item))||blank(b->id)||blank(b->item)||b->quantity<=0||b->received_day<0||b->expiry_day<b->received_day||b->status!=BATCH_ACTIVE||today>b->expiry_day)return FEFO_ERR_INVALID;if(inventory_lookup(v,b->id))return FEFO_ERR_DUPLICATE;if(v->kind==POLICY_FIFO&&v->size){last=v->items[v->size-1U];if(b->received_day<last->received_day||(b->received_day==last->received_day&&strcmp(b->id,last->id)<0))return FEFO_ERR_INVALID;}s=reserve_items(v,v->size+1U);if(s!=FEFO_OK)return s;s=map_reserve(v);if(s!=FEFO_OK)return s;s=map_insert(v,b);if(s!=FEFO_OK)return s;v->items[v->size]=b;++v->size;if(v->kind==POLICY_HEAP_FEFO)sift_up(v,v->size-1U);return FEFO_OK;}
+FefoStatus inventory_add(Inventory *v,FoodBatch *b,int today){FefoStatus s;FoodBatch *last;if(!v||!b||today<0||b->id[0]=='\0'||!memchr(b->id,'\0',sizeof(b->id))||!memchr(b->item,'\0',sizeof(b->item))||blank(b->id)||blank(b->item)||b->quantity<=0||b->received_day<0||b->expiry_day<b->received_day||b->status!=BATCH_ACTIVE||today>b->expiry_day)return FEFO_ERR_INVALID;if(inventory_lookup(v,b->id))return FEFO_ERR_DUPLICATE;if(v->kind==POLICY_FIFO&&v->size){last=v->items[v->size-1U];if(b->received_day<last->received_day||(b->received_day==last->received_day&&strcmp(b->id,last->id)<0))return FEFO_ERR_INVALID;}s=reserve_items(v,v->size+1U);if(s!=FEFO_OK)return s;s=map_reserve(v);if(s!=FEFO_OK)return s;s=map_insert(v,b);if(s!=FEFO_OK)return s;v->items[v->size]=b;++v->size;METRIC_INC(insertions);if(v->kind==POLICY_HEAP_FEFO)sift_up(v,v->size-1U);return FEFO_OK;}
 FefoStatus inventory_purge_expired(Inventory *v,int today,size_t *purged){size_t i,w=0,n=0;if(!v||today<0)return FEFO_ERR_INVALID;if(v->kind==POLICY_HEAP_FEFO){while(v->size&&today>v->items[0]->expiry_day){FoodBatch *b=v->items[0];if(b->status==BATCH_ACTIVE)b->status=BATCH_EXPIRED;remove_at(v,0);++n;}}else{for(i=0;i<v->size;++i){FoodBatch *b=v->items[i];if(today>b->expiry_day||b->status==BATCH_EXPIRED||b->status==BATCH_EXHAUSTED||b->quantity<=0){if(today>b->expiry_day&&b->status==BATCH_ACTIVE)b->status=BATCH_EXPIRED;else if(b->quantity<=0&&b->status==BATCH_ACTIVE)b->status=BATCH_EXHAUSTED;++n;}else v->items[w++]=b;}v->size=w;}if(purged)*purged=n;return FEFO_OK;}
 static size_t best_index(const Inventory *v,int today){size_t i,best=SIZE_MAX;if(!v)return SIZE_MAX;if(v->kind==POLICY_HEAP_FEFO||v->kind==POLICY_FIFO)return v->size&&food_batch_eligible(v->items[0],today)?0U:SIZE_MAX;for(i=0;i<v->size;++i)if(food_batch_eligible(v->items[i],today)&&(best==SIZE_MAX||food_batch_compare(v->items[i],v->items[best])<0))best=i;return best;}
 FefoStatus inventory_earliest(Inventory *v,int today,FoodBatch **out){size_t i;FefoStatus s;if(!v||!out)return FEFO_ERR_INVALID;*out=NULL;s=inventory_purge_expired(v,today,NULL);if(s!=FEFO_OK)return s;i=best_index(v,today);if(i==SIZE_MAX)return FEFO_ERR_EMPTY;*out=v->items[i];return FEFO_OK;}
@@ -135,4 +162,41 @@ printf("n=%zu: heap and linear choices matched for %zu removals\n",n,m);
 free(base);free(heap_batches);free(linear_batches);
 }
 return ferror(f)||ferror(summary)?FEFO_ERR_INVALID:FEFO_OK;
+}
+
+FefoStatus benchmark_operation_counts(FILE *f){
+static const size_t sizes[]={1000U,5000U,10000U,50000U,100000U};
+size_t k;
+if(!f)return FEFO_ERR_INVALID;
+fprintf(f,"algorithm,n,m,seed,build_comparisons,build_heap_swaps,build_insertions,selection_comparisons,selection_heap_swaps,selection_removals,selection_heap_extractions\n");
+for(k=0;k<sizeof(sizes)/sizeof(sizes[0]);++k){
+size_t n=sizes[k],m=n<200U?n:200U,i,algo;
+FoodBatch *b=calloc(n,sizeof(*b));uint32_t state=20261009U+(uint32_t)n;FefoStatus s;
+if(!b)return FEFO_ERR_NOMEM;
+for(i=0;i<n;++i){char id[FEFO_BATCH_ID_CAP];int expiry=1+(int)(rng_next(&state)%30U);(void)snprintf(id,sizeof(id),"B%08zu",i);s=food_batch_init(&b[i],id,"Synthetic benchmark",1,0,expiry);if(s!=FEFO_OK){free(b);return s;}}
+for(algo=0;algo<2U;++algo){
+Inventory v={0};FefoOperationMetrics build,selection;PolicyKind kind=algo==0U?POLICY_HEAP_FEFO:POLICY_LINEAR_FEFO;
+for(i=0;i<n;++i){b[i].quantity=1;b[i].status=BATCH_ACTIVE;}
+fefo_metrics_reset();fefo_metrics_enable(true);
+s=build_inventory(&v,b,n,kind);
+fefo_metrics_enable(false);build=fefo_metrics_snapshot();
+if(s!=FEFO_OK){inventory_destroy(&v);free(b);return s;}
+fefo_metrics_reset();fefo_metrics_enable(true);
+for(i=0;i<m;++i){
+size_t index=best_index(&v,0);FoodBatch *chosen;
+if(index==SIZE_MAX){fefo_metrics_enable(false);inventory_destroy(&v);free(b);return FEFO_ERR_INVALID;}
+chosen=v.items[index];chosen->quantity=0;chosen->status=BATCH_EXHAUSTED;remove_at(&v,index);
+}
+fefo_metrics_enable(false);selection=fefo_metrics_snapshot();
+fprintf(f,"%s,%zu,%zu,%u,%llu,%llu,%llu,%llu,%llu,%llu,%llu\n",
+algo==0U?"HEAP_FEFO":"LINEAR_FEFO",n,m,(unsigned)(20261009U+(uint32_t)n),
+(unsigned long long)build.comparisons,(unsigned long long)build.heap_swaps,(unsigned long long)build.insertions,
+(unsigned long long)selection.comparisons,(unsigned long long)selection.heap_swaps,
+(unsigned long long)selection.removals,(unsigned long long)selection.heap_extractions);
+inventory_destroy(&v);
+}
+printf("Operation counts n=%zu: heap and linear runs recorded separately\n",n);
+free(b);
+}
+return ferror(f)?FEFO_ERR_INVALID:FEFO_OK;
 }
