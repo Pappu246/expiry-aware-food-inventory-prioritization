@@ -50,5 +50,91 @@ struct timespec ts;if(clock_gettime(CLOCK_MONOTONIC,&ts)==0)return (double)ts.tv
 #endif
 return (double)clock()/(double)CLOCKS_PER_SEC;}
 static FefoStatus build_inventory(Inventory *v,FoodBatch *b,size_t n,PolicyKind p){size_t i;FefoStatus s=inventory_init(v,p);if(s!=FEFO_OK)return s;for(i=0;i<n;++i){s=inventory_add(v,&b[i],0);if(s!=FEFO_OK){inventory_destroy(v);return s;}}return FEFO_OK;}
-FefoStatus benchmark_structure(FILE *f){static const size_t sizes[]={1000U,5000U,10000U,50000U,100000U};size_t k;if(!f)return FEFO_ERR_INVALID;fprintf(f,"algorithm,n,m,seed,trial,build_seconds,selection_seconds,correctness\n");for(k=0;k<sizeof(sizes)/sizeof(sizes[0]);++k){size_t n=sizes[k],m=n<200?n:200,i;FoodBatch *b=calloc(n,sizeof(*b));uint32_t state=20261009U+(uint32_t)n;FefoStatus s;if(!b)return FEFO_ERR_NOMEM;for(i=0;i<n;++i){char id[FEFO_BATCH_ID_CAP];int ex=1+(int)(rng_next(&state)%30U);(void)snprintf(id,sizeof(id),"B%08zu",i);s=food_batch_init(&b[i],id,"Synthetic benchmark",1,0,ex);if(s!=FEFO_OK){free(b);return s;}}{Inventory h={0},l={0};s=build_inventory(&h,b,n,POLICY_HEAP_FEFO);if(s==FEFO_OK)s=build_inventory(&l,b,n,POLICY_LINEAR_FEFO);if(s!=FEFO_OK){inventory_destroy(&h);inventory_destroy(&l);free(b);return s;}for(i=0;i<m;++i){FoodBatch *x=NULL,*y=NULL;size_t j;s=inventory_earliest(&h,0,&x);if(s==FEFO_OK)s=inventory_earliest(&l,0,&y);if(s!=FEFO_OK||!x||!y||strcmp(x->id,y->id)){inventory_destroy(&h);inventory_destroy(&l);free(b);return FEFO_ERR_INVALID;}x->quantity=0;x->status=BATCH_EXHAUSTED;y->quantity=0;y->status=BATCH_EXHAUSTED;for(j=0;j<h.size&&h.items[j]!=x;++j){}remove_at(&h,j);for(j=0;j<l.size&&l.items[j]!=y;++j){}remove_at(&l,j);}inventory_destroy(&h);inventory_destroy(&l);}for(i=0;i<n;++i){b[i].quantity=1;b[i].status=BATCH_ACTIVE;}
-for(i=0;i<8U;++i){PolicyKind kinds[2]={i%2U?POLICY_LINEAR_FEFO:POLICY_HEAP_FEFO,i%2U?POLICY_HEAP_FEFO:POLICY_LINEAR_FEFO};size_t z;for(z=0;z<2U;++z){Inventory v={0};double start,build,select;size_t j;for(j=0;j<n;++j){b[j].quantity=1;b[j].status=BATCH_ACTIVE;}s=inventory_init(&v,kinds[z]);if(s!=FEFO_OK){free(b);return s;}start=timer_seconds();for(j=0;j<n;++j){s=inventory_add(&v,&b[j],0);if(s!=FEFO_OK){inventory_destroy(&v);free(b);return s;}}build=timer_seconds()-start;start=timer_seconds();for(j=0;j<m;++j){FoodBatch *x=NULL;s=inventory_earliest(&v,0,&x);if(s!=FEFO_OK){inventory_destroy(&v);free(b);return s;}{size_t k;for(k=0;k<v.size&&v.items[k]!=x;++k){}if(k==v.size){inventory_destroy(&v);free(b);return FEFO_ERR_INVALID;}x->quantity=0;x->status=BATCH_EXHAUSTED;remove_at(&v,k);}}select=timer_seconds()-start;if(i>0U)fprintf(f,"%s,%zu,%zu,%u,%zu,%.9f,%.9f,yes\n",kinds[z]==POLICY_HEAP_FEFO?"HEAP_FEFO":"LINEAR_FEFO",n,m,(unsigned)(20261009U+(uint32_t)n),i,build,select);inventory_destroy(&v);}}printf("n=%zu: heap and linear choices matched for %zu removals\n",n,m);free(b);}return ferror(f)?FEFO_ERR_INVALID:FEFO_OK;}
+static int compare_doubles(const void *left,const void *right){double a=*(const double*)left,b=*(const double*)right;return (a>b)-(a<b);}
+FefoStatus benchmark_structure(FILE *f,FILE *summary){
+static const size_t sizes[]={1000U,5000U,10000U,50000U,100000U};
+size_t k;
+if(!f||!summary)return FEFO_ERR_INVALID;
+fprintf(f,"algorithm,n,m,seed,trial,build_seconds,selection_seconds,correctness\n");
+fprintf(summary,"n,m,seed,measured_trials,heap_build_median_seconds,heap_build_min_seconds,heap_build_max_seconds,linear_build_median_seconds,linear_build_min_seconds,linear_build_max_seconds,heap_selection_median_seconds,heap_selection_min_seconds,heap_selection_max_seconds,linear_selection_median_seconds,linear_selection_min_seconds,linear_selection_max_seconds,linear_over_heap_median_speedup\n");
+for(k=0;k<sizeof(sizes)/sizeof(sizes[0]);++k){
+size_t n=sizes[k],m=n<200U?n:200U,i;
+FoodBatch *base=calloc(n,sizeof(*base)),*heap_batches=calloc(n,sizeof(*heap_batches)),*linear_batches=calloc(n,sizeof(*linear_batches));
+double build_times[2][7]={{0}},selection_times[2][7]={{0}};
+uint32_t state=20261009U+(uint32_t)n;
+FefoStatus s;
+if(!base||!heap_batches||!linear_batches){free(base);free(heap_batches);free(linear_batches);return FEFO_ERR_NOMEM;}
+for(i=0;i<n;++i){
+char id[FEFO_BATCH_ID_CAP];
+int expiry=1+(int)(rng_next(&state)%30U);
+(void)snprintf(id,sizeof(id),"B%08zu",i);
+s=food_batch_init(&base[i],id,"Synthetic benchmark",1,0,expiry);
+if(s!=FEFO_OK){free(base);free(heap_batches);free(linear_batches);return s;}
+}
+memcpy(heap_batches,base,n*sizeof(*base));
+memcpy(linear_batches,base,n*sizeof(*base));
+{
+Inventory h={0},l={0};
+s=build_inventory(&h,heap_batches,n,POLICY_HEAP_FEFO);
+if(s==FEFO_OK)s=build_inventory(&l,linear_batches,n,POLICY_LINEAR_FEFO);
+if(s!=FEFO_OK){inventory_destroy(&h);inventory_destroy(&l);free(base);free(heap_batches);free(linear_batches);return s;}
+for(i=0;i<m;++i){
+FoodBatch *x=NULL,*y=NULL;size_t j;
+s=inventory_earliest(&h,0,&x);
+if(s==FEFO_OK)s=inventory_earliest(&l,0,&y);
+if(s!=FEFO_OK||!x||!y||strcmp(x->id,y->id)){
+inventory_destroy(&h);inventory_destroy(&l);free(base);free(heap_batches);free(linear_batches);return FEFO_ERR_INVALID;
+}
+x->quantity=0;x->status=BATCH_EXHAUSTED;y->quantity=0;y->status=BATCH_EXHAUSTED;
+for(j=0;j<h.size&&h.items[j]!=x;++j){}
+if(j==h.size){inventory_destroy(&h);inventory_destroy(&l);free(base);free(heap_batches);free(linear_batches);return FEFO_ERR_INVALID;}
+remove_at(&h,j);
+for(j=0;j<l.size&&l.items[j]!=y;++j){}
+if(j==l.size){inventory_destroy(&h);inventory_destroy(&l);free(base);free(heap_batches);free(linear_batches);return FEFO_ERR_INVALID;}
+remove_at(&l,j);
+}
+inventory_destroy(&h);inventory_destroy(&l);
+}
+for(i=0;i<8U;++i){
+PolicyKind kinds[2]={i%2U?POLICY_LINEAR_FEFO:POLICY_HEAP_FEFO,i%2U?POLICY_HEAP_FEFO:POLICY_LINEAR_FEFO};
+size_t z;
+for(z=0;z<2U;++z){
+Inventory v={0};double start,build,select;size_t j,algo=kinds[z]==POLICY_HEAP_FEFO?0U:1U;
+FoodBatch *work=algo==0U?heap_batches:linear_batches;
+memcpy(work,base,n*sizeof(*base));
+start=timer_seconds();
+s=inventory_init(&v,kinds[z]);
+if(s!=FEFO_OK){free(base);free(heap_batches);free(linear_batches);return s;}
+for(j=0;j<n;++j){s=inventory_add(&v,&work[j],0);if(s!=FEFO_OK){inventory_destroy(&v);free(base);free(heap_batches);free(linear_batches);return s;}}
+build=timer_seconds()-start;
+start=timer_seconds();
+for(j=0;j<m;++j){
+FoodBatch *chosen=NULL;size_t index;
+s=inventory_earliest(&v,0,&chosen);
+if(s!=FEFO_OK||!chosen){inventory_destroy(&v);free(base);free(heap_batches);free(linear_batches);return FEFO_ERR_INVALID;}
+for(index=0;index<v.size&&v.items[index]!=chosen;++index){}
+if(index==v.size){inventory_destroy(&v);free(base);free(heap_batches);free(linear_batches);return FEFO_ERR_INVALID;}
+chosen->quantity=0;chosen->status=BATCH_EXHAUSTED;remove_at(&v,index);
+}
+select=timer_seconds()-start;
+if(i>0U){
+build_times[algo][i-1U]=build;
+selection_times[algo][i-1U]=select;
+fprintf(f,"%s,%zu,%zu,%u,%zu,%.9f,%.9f,yes\n",algo==0U?"HEAP_FEFO":"LINEAR_FEFO",n,m,(unsigned)(20261009U+(uint32_t)n),i,build,select);
+}
+inventory_destroy(&v);
+}
+}
+{
+double hb[7],hs[7],lb[7],ls[7],speedup;
+for(i=0;i<7U;++i){hb[i]=build_times[0][i];hs[i]=selection_times[0][i];lb[i]=build_times[1][i];ls[i]=selection_times[1][i];}
+qsort(hb,7U,sizeof(double),compare_doubles);qsort(hs,7U,sizeof(double),compare_doubles);qsort(lb,7U,sizeof(double),compare_doubles);qsort(ls,7U,sizeof(double),compare_doubles);
+speedup=hs[3]>0.0?ls[3]/hs[3]:0.0;
+fprintf(summary,"%zu,%zu,%u,7,%.9f,%.9f,%.9f,%.9f,%.9f,%.9f,%.9f,%.9f,%.9f,%.9f,%.9f,%.9f,%.6f\n",n,m,(unsigned)(20261009U+(uint32_t)n),hb[3],hb[0],hb[6],lb[3],lb[0],lb[6],hs[3],hs[0],hs[6],ls[3],ls[0],ls[6],speedup);
+printf("Timing n=%zu m=%zu | build median heap/linear %.6f/%.6f s | selection median heap/linear %.6f/%.6f s | linear/heap %.3fx\n",n,m,hb[3],lb[3],hs[3],ls[3],speedup);
+}
+printf("n=%zu: heap and linear choices matched for %zu removals\n",n,m);
+free(base);free(heap_batches);free(linear_batches);
+}
+return ferror(f)||ferror(summary)?FEFO_ERR_INVALID:FEFO_OK;
+}

@@ -39,5 +39,5 @@ void event_trace_destroy(EventTrace *trace);
 FefoStatus simulation_run(const EventTrace *trace,PolicyKind policy,SimulationResult *out);
 void simulation_csv_header(FILE *stream);
 void simulation_csv_row(FILE *stream,const EventTrace *trace,const SimulationResult *result);
-FefoStatus benchmark_structure(FILE *stream);
+FefoStatus benchmark_structure(FILE *raw_stream,FILE *summary_stream);
 #endif
