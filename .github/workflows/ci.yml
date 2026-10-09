@@ -24,3 +24,11 @@ jobs:
         run: ./build/fefo simulate 100
       - name: Benchmark smoke test
         run: ./build/fefo benchmark
+      - name: Archive generated CSV evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-results-${{ github.sha }}
+          path: results/generated/*.csv
+          if-no-files-found: warn
+          retention-days: 30
