@@ -20,3 +20,7 @@ jobs:
         run: make test
       - name: Demo smoke test
         run: ./build/fefo demo
+      - name: Simulation smoke test
+        run: ./build/fefo simulate 100
+      - name: Benchmark smoke test
+        run: ./build/fefo benchmark
