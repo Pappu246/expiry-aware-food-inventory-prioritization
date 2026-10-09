@@ -2,60 +2,57 @@
 
 ## 1. Architecture decision
 
-The MVP is an in-memory Java 17+ command-line application. It has no database server, web server, external API, or cloud dependency. The core is a custom binary Min-Heap used by the FEFO policy. The visual interface is deliberately secondary.
+The MVP is a dependency-free C11 command-line program. It has no database, web server, external API, or cloud runtime dependency. A custom array-backed binary Min-Heap implements FEFO. The primary academic contribution is the DSA engine and fair benchmark, not the interface.
 
-The architecture supports three separate implementations for controlled experiments:
+Three policy/selection implementations are kept separate:
+1. Heap FEFO — proposed data structure.
+2. Linear-scan FEFO — same policy, different selection structure and correctness oracle.
+3. FIFO — different stock-rotation policy used for the operational simulation.
 
-1. Heap-based FEFO — proposed data structure.
-2. Linear-scan FEFO — same policy, different selection structure; also the correctness oracle.
-3. FIFO — different stock-rotation policy; used only for the policy simulation.
+Do not compare all three as interchangeable speed competitors.
 
-Do not compare the three as if all were interchangeable speed competitors.
-
-## 2. High-level component diagram
+## 2. Component diagram
 
 ~~~text
-                 CLI / Test / Benchmark Runner
-                              |
-                 Batch data and event trace
-                              |
-                  +-----------+-----------+
-                  |                       |
-             FEFO heap policy       Linear FEFO policy
-                  |                       |
-             Custom Min-Heap          Unsorted List
-                  |                       |
-                  +-----------+-----------+
-                              |
-                       Allocation Results
-                              |
-                  Differential Correctness Check
+                CLI / Test / Benchmark Runner
+                             |
+                Batch data / immutable event trace
+                             |
+                 +-----------+-----------+
+                 |                       |
+            Heap-based FEFO         Linear-scan FEFO
+                 |                       |
+             Custom Min-Heap        Unsorted dynamic array
+                 |                       |
+                 +-----------+-----------+
+                             |
+                 Allocation results / oracle
 
-    Separate policy simulation:
-    Immutable arrivals + exogenous demand + fixed day order
-                    |                         |
-               FEFO policy               FIFO policy
-                    |                         |
-                    +------------+------------+
-                                 |
-                     Shared expiry/accounting rules
-                                 |
-                Waste / fulfillment / shortfall results
-                                 |
-                           CSV exports
+ Separate policy simulation:
+ Same arrivals + same exogenous demand + fixed day ordering
+                 |                           |
+             FEFO policy                 FIFO policy
+                 |                           |
+                 +-------------+-------------+
+                               |
+                   Shared expiry/waste ledger
+                               |
+                Waste / fulfillment / shortfall
+                               |
+                         CSV exports
 ~~~
 
-## 3. Technology choices
+## 3. Language and build
 
-- **Language:** Java 17 or a later compatible LTS JDK.
-- **Build:** minimal Maven project.
-- **Tests:** JUnit 5 if dependency retrieval is available; core behavior must remain testable with a standard local build.
-- **Runtime dependencies:** Java standard library only.
-- **Persistence:** in-memory only for the MVP; CSV export for generated results.
-- **Interface:** command-line demo.
-- **Charts:** use exported CSV with a spreadsheet tool or a small optional plotting script. Chart generation must never be included in benchmark timing.
+- **Language standard:** ISO C11.
+- **Compiler target:** GCC or Clang; MSVC can be supported only if the selected code path remains C11-compatible.
+- **Dependencies:** standard C library only; no third-party test framework.
+- **Build/test on Windows:** a PowerShell script invokes a C compiler such as GCC. The compiler must be installed and available on PATH.
+- **Build/test on Linux/macOS:** GCC or Clang can compile the same sources with C11 warnings enabled.
+- **Interface:** command-line only.
+- **Charts:** export CSV and make charts separately; charting is never timed.
 
-Do not add a web framework, database server, dependency-injection framework, or charting framework to the MVP.
+The repository must not use Java, Maven, Python, or an external C runtime package as part of the application. A separate optional charting tool may be used to visualize exported results but is not part of the engine.
 
 ## 4. Proposed source layout
 
@@ -65,217 +62,178 @@ expiry-aware-food-inventory-prioritization/
 ├── PROJECT_SPEC.md
 ├── ARCHITECTURE.md
 ├── BENCHMARK_PROTOCOL.md
-├── pom.xml
 ├── .gitignore
+├── build.ps1
+├── include/
+│   └── fefo/
+│       ├── food_batch.h
+│       ├── min_heap.h
+│       ├── hash_table.h
+│       ├── policy.h
+│       ├── event_trace.h
+│       ├── waste_ledger.h
+│       └── benchmark.h
 ├── src/
-│   ├── main/
-│   │   └── java/
-│   │       └── edu/vgu/fefo/
-│   │           ├── app/
-│   │           │   └── CliApp.java
-│   │           ├── model/
-│   │           │   ├── FoodBatch.java
-│   │           │   ├── BatchStatus.java
-│   │           │   ├── AllocationResult.java
-│   │           │   └── AllocationLine.java
-│   │           ├── ds/
-│   │           │   └── MinHeap.java
-│   │           ├── engine/
-│   │           │   ├── InventoryPolicy.java
-│   │           │   ├── FefoHeapPolicy.java
-│   │           │   ├── LinearFefoPolicy.java
-│   │           │   ├── FifoPolicy.java
-│   │           │   └── BatchOrder.java
-│   │           ├── simulation/
-│   │           │   ├── EventTrace.java
-│   │           │   ├── DatasetGenerator.java
-│   │           │   ├── SimulationRunner.java
-│   │           │   ├── WasteLedger.java
-│   │           │   └── SimulationSummary.java
-│   │           └── benchmark/
-│   │               ├── BenchmarkRunner.java
-│   │               ├── OperationCounters.java
-│   │               ├── BenchmarkResult.java
-│   │               └── CsvExporter.java
-│   └── test/
-│       └── java/
-│           └── edu/vgu/fefo/
-│               ├── ds/MinHeapTest.java
-│               ├── engine/FefoDifferentialTest.java
-│               ├── engine/AllocationEdgeCasesTest.java
-│               └── simulation/SimulationReproducibilityTest.java
+│   ├── food_batch.c
+│   ├── min_heap.c
+│   ├── hash_table.c
+│   ├── fefo_heap.c
+│   ├── fefo_linear.c
+│   ├── fifo_policy.c
+│   ├── event_trace.c
+│   ├── waste_ledger.c
+│   ├── simulation.c
+│   ├── benchmark.c
+│   └── main.c
+├── tests/
+│   └── test_main.c
 └── results/
-    └── (generated CSV results; commit only final selected results)
+    └── (generated CSV outputs)
 ~~~
 
-The implementation agent may make small naming adjustments to fit clean Java conventions, but it must preserve the component boundaries and behavior defined in the specification.
+Keep the module count small. The implementation agent may adjust file names slightly if needed, but it must preserve the frozen behavior and boundaries.
 
-## 5. Components and responsibilities
+## 5. Core models and memory ownership
 
-### 5.1 FoodBatch and BatchStatus
+### FoodBatch
 
-FoodBatch represents one batch within one homogeneous product pool.
+A FoodBatch stores:
+- bounded batch ID string
+- bounded descriptive item name
+- integer remaining quantity
+- immutable received day
+- immutable expiry day
+- ACTIVE, EXHAUSTED, or EXPIRED status
 
-Immutable fields:
-- batch ID
-- received day
-- expiry day
-- descriptive item label
+Use documented character capacities and reject overlong input; never silently truncate IDs. Allocate FoodBatch objects once and maintain explicit ownership. The owning inventory/policy frees each object exactly once. Heap, hash table, list, and queue entries contain non-owning pointers to that same object.
 
-Mutable fields:
-- remaining integer quantity
-- status
+### Comparator
 
-Statuses:
-- ACTIVE
-- EXHAUSTED
-- EXPIRED
-
-A batch quantity is decremented in place. When the quantity reaches zero, status becomes EXHAUSTED and the batch is removed from the active priority structure. The ID registry retains the ID so duplicate IDs are rejected rather than silently reused.
-
-### 5.2 BatchOrder
-
-BatchOrder defines the one allowed deterministic total order:
-
+One deterministic total order:
 1. expiry day ascending
 2. received day ascending
 3. batch ID lexicographically ascending
 
-Expiry day, received day, and batch ID are immutable. No dynamic score is used as the heap key.
+The key is immutable after insertion. The comparator must be used by both heap and linear FEFO to avoid inconsistent choices.
 
-### 5.3 MinHeap
+### Custom Min-Heap
 
-MinHeap is a custom array-backed binary Min-Heap. It must implement:
-
+Use a dynamically resized array of FoodBatch pointers. Implement:
 - insert
-- peek minimum
-- extract minimum
-- size and empty checks
-- an invariant checker for tests
+- peek-min
+- extract-min
+- size / empty
+- heap invariant validation for tests
 
-It must not be replaced by Java's built-in PriorityQueue.
+Do not use an existing priority-queue implementation. Check allocation failures before modifying the data structure, and avoid corrupting the heap if memory allocation fails.
 
-The heap stores references to the same FoodBatch objects held by that policy's ID registry. No duplicated batch snapshots are allowed in the active heap.
+The heap does not support arbitrary deletion or changing priority keys. These operations are not required: allocation consumes only the root and priority fields do not change.
 
-The heap does not support arbitrary deletion or priority-key mutation. The MVP does not need either operation: allocations always consume the root, and ordering fields are immutable.
+### Custom hash table
 
-### 5.4 FEFO heap policy
+Use open addressing with linear probing and dynamic resizing. Each occupied slot refers to the same FoodBatch object that is held by the policy's active structure. Rehash when the planned insertion would exceed a load factor of 0.70. No deletions are needed in the MVP, because IDs remain registered after exhaustion/expiry and therefore cannot be reused.
 
-FefoHeapPolicy owns:
-- the custom Min-Heap
-- a HashMap from batch ID to the batch object
-- minimal counters and transaction/allocation output
+Document the hash function and collision strategy. Validate duplicate IDs before inserting into the heap/list.
+
+### FEFO heap policy
+
+Owns:
+- custom Min-Heap
+- custom hash table mapping ID to FoodBatch pointer
+- minimal allocation result records/counters
 
 Operations:
-- insert a validated batch
-- look up a batch by ID
-- find the earliest eligible batch
-- allocate a requested integer quantity
-- remove expired root entries before selecting stock
+- insert validated batch
+- lookup by ID
+- identify earliest eligible batch
+- allocate requested integer quantity
+- purge expired roots before allocation
 
-Because the heap key is expiry-first, every expired batch is at the front of the heap order. Repeatedly remove the root while today is later than its expiry day. If the root is not expired, no later heap entry can be expired under the same expiry rule.
+For expiry, repeatedly remove the heap root while today > expiry day. If root is not expired, no later heap entry can be expired because expiry day is the first key. Mark purged batches EXPIRED and report them to shared simulation accounting.
 
-When a root batch is partially allocated, decrement its quantity in place. Its priority key is unchanged, so do not remove and reinsert it. If its quantity reaches zero, extract it.
+On partial allocation, decrement quantity in place. Since heap ordering fields do not change, leave the batch at root. When quantity reaches zero, extract it and mark EXHAUSTED.
 
-### 5.5 Linear FEFO policy
+### Linear FEFO baseline
 
-LinearFefoPolicy applies the exact same eligibility rule and total-order key as the heap policy but selects the minimum by scanning an unsorted list.
+Store a dynamic array of batch pointers. For each selection, scan eligible entries and return the minimum using the exact same comparator. This acts as the correctness oracle. During the timed structure experiment, remove the selected record by swap-with-last to avoid measuring array shifting as an unrelated cost.
 
-It is the correctness oracle for differential tests. Given the same state and request trace, it must choose the same sequence of batch IDs and fulfill the same quantities as FefoHeapPolicy.
+### FIFO baseline
 
-For the timing experiment, remove a selected record from the unsorted list with swap-with-last removal after the scan, so list shifting does not add unrelated O(n) cost to the selection measurement. This is an internal benchmark detail; explain it in the report.
+Use an arrival-ordered queue of batch pointers, breaking same-day ties by batch ID. FIFO is only used for the policy experiment. Because expiry order can differ from arrival order, the start-of-day expiry-maintenance step filters expired entries wherever they occur while preserving the order of remaining eligible entries. This filtering may be O(n); do not claim FIFO's whole policy maintenance is always O(1).
 
-### 5.6 FIFO policy
+### Immutable event trace and simulation
 
-FifoPolicy allocates from the oldest received eligible batch, resolving same-day arrival ties by batch ID. It uses a queue only as the baseline's representation of arrival order.
+Generate arrivals and demand events once per seed. Each policy run receives a deep-cloned initial state and the same immutable trace. Demand does not respond to prior fulfillment/shortfalls, and shortfalls are not re-queued.
 
-At the start of each simulated day, an expired batch may be in the middle of the FIFO queue because expiry order can differ from arrival order. The baseline must therefore filter expired entries while preserving the relative arrival order of eligible entries. This maintenance pass can be O(n); policy simulation results are not a pure FIFO-vs-heap speed contest.
+Each simulation day follows:
+1. Process arrivals.
+2. Account and remove batches for which today > expiry day.
+3. Process demand.
 
-FIFO is used to compare stock-rotation outcomes, not to prove that a heap is faster than a queue.
+### Shared waste ledger
 
-### 5.7 ID registry and single source of truth
+Use one shared accounting rule for every policy. At the expiry event, record the remaining positive quantity of each expired active batch exactly once, then mark it EXPIRED. Do not count waste by the number of heap or queue removals; that would bias results.
 
-Each policy instance has its own HashMap of batch IDs to its own batch objects. The heap/list/queue for that policy references those same objects. Different policies use separate copies of the same initial batch data so a run of one policy cannot mutate another policy's state.
+### Benchmark runner
 
-The registry retains exhausted and expired IDs for duplicate rejection and test inspection.
+Run structure timing separately from policy simulation. Use a high-resolution timer available in the target C environment (for example, QueryPerformanceCounter on Windows or clock_gettime on POSIX) behind a small portable timer interface. If only a lower-resolution timer is available, aggregate many operations and disclose the timer used.
 
-### 5.8 Simulation runner and EventTrace
+Warm up, repeat trials, record median and range, and keep input generation, correctness comparison, logging, file output, and chart generation outside timed regions. Run operation counters separately when counters would materially change timing.
 
-EventTrace is immutable after generation and holds:
-- batch arrivals (batch ID, quantity, received day, expiry day)
-- demand events (day, integer requested quantity)
-- seed and workload metadata
+### CLI
 
-SimulationRunner replays the same trace against each policy. Demand is exogenous and shortfalls are not re-queued. Day order is fixed:
-1. arrivals
-2. expiry accounting and removal
-3. demands
-
-### 5.9 WasteLedger
-
-WasteLedger uses one shared accounting rule for every strategy. At the expiry event, remaining quantity is recorded as waste exactly once when today is later than expiry day. Accounting is done before strategy-specific removal, and the simulation reports expired quantity separately from unexpired stock remaining at the end.
-
-Do not calculate waste by counting how many records a policy happened to purge from its heap or queue. That would bias the policy comparison.
-
-### 5.10 BenchmarkRunner and OperationCounters
-
-BenchmarkRunner runs the structure experiment independently from the policy simulation. It:
-- creates reproducible input traces
-- warms up the JVM
-- runs multiple measured trials
-- records aggregate elapsed time and median
-- exports results after the timed region
-
-OperationCounters record comparisons and structural operations in a separate instrumented run where practical. Avoid counting instrumentation overhead as if it were pure runtime.
-
-### 5.11 CLI
-
-The CLI is intentionally small. It can:
-- load or generate a batch scenario
-- insert a batch
-- display the earliest eligible batch
+Keep it small:
+- load/generate scenario
+- add batch
+- show earliest eligible batch
 - request allocation
-- show fulfilled quantity and shortfall
-- run the benchmark
-- run the policy simulation
-- export CSV results
+- display fulfilled quantity and shortfall
+- run structure benchmark
+- run policy simulation
+- export CSV
 
-No login, database, web UI, or real-world donation workflow is required.
+No login, database, web UI, or live donation flow is required.
 
-## 6. Core API contract
+## 6. Function contract
 
-Use a small consistent contract rather than creating a large service layer.
+Expose a small consistent interface, adapted to C header/source conventions:
 
 ~~~text
-InventoryPolicy
-  addBatch(FoodBatch batch)
-  findEarliestEligible(today)
-  allocate(requestedQuantity, today) -> AllocationResult
-  removeExpiredBefore(today)
-  snapshotForAccounting()
+fefo_heap_add_batch(...)
+fefo_heap_find_earliest(...)
+fefo_heap_allocate(...)
+fefo_heap_purge_expired(...)
+
+linear_fefo_add_batch(...)
+linear_fefo_find_earliest(...)
+linear_fefo_allocate(...)
+
+fifo_add_batch(...)
+fifo_allocate(...)
+
+min_heap_insert(...)
+min_heap_peek(...)
+min_heap_extract_min(...)
+min_heap_is_valid(...)
 ~~~
 
-Names may be adjusted to valid Java signatures. The behavioral contract may not change without updating PROJECT_SPEC.md and BENCHMARK_PROTOCOL.md.
+Use explicit status/result structs and return error codes for invalid inputs, duplicate IDs, and allocation failures. Avoid hidden global state.
 
-AllocationResult must include:
-- requested quantity
-- fulfilled quantity
-- shortfall quantity
-- allocation lines (batch ID and allocated quantity)
-- a clear empty/partial/full outcome
+Allocation results should include requested quantity, fulfilled quantity, shortfall, allocation lines, and a full/partial/empty outcome.
 
 ## 7. Key invariants
 
-1. A batch ID is unique within one policy instance.
-2. Expiry day, received day, and batch ID never change after insertion.
+1. Batch IDs are unique within a policy instance.
+2. Expiry day, received day, and ID never change after insertion.
 3. Quantity is never negative.
-4. An EXHAUSTED batch has quantity zero and is absent from its active priority structure.
+4. An EXHAUSTED batch has zero quantity and is absent from its active policy structure.
 5. An EXPIRED batch is never allocated.
-6. An ACTIVE batch in a policy's eligible index has positive quantity.
-7. The custom heap satisfies parent <= child for BatchOrder.
-8. Heap policy and linear FEFO policy choose the same eligible minimum.
-9. No demand or batch-arrival event is changed based on policy output.
-10. Waste is counted once by the shared simulation accounting rules.
+6. An ACTIVE batch in the eligible index has positive quantity.
+7. The heap satisfies parent <= child under the frozen comparator.
+8. Heap FEFO and linear FEFO choose the same eligible minimum.
+9. No policy changes the shared demand or arrival trace.
+10. Waste is counted once by shared simulation rules.
+11. Owned C allocations are freed exactly once; no use-after-free or double-free.
 
 ## 8. Complexity reference
 
@@ -284,21 +242,15 @@ AllocationResult must include:
 | Custom heap insertion | O(log n) worst case |
 | Heap peek | O(1) when root is valid |
 | Heap extract-min | O(log n) |
-| HashMap lookup | O(1) expected; O(n) worst case |
+| Open-addressed hash lookup | Expected O(1) at controlled load factor; worst case O(n) |
 | Linear FEFO selection | O(n) per selection |
 | FIFO enqueue/dequeue | O(1) queue operation |
-| FIFO expired-item filtering pass | O(n) in the number of queued batches |
-| Heap bulk heapify, if implemented | O(n) |
-| Repeated heap insertion for initial build | O(n log n) |
+| FIFO expiry filter | O(n) in queued batch count |
+| Heapify, if used | O(n) |
+| Repeated insertion initial build | O(n log n) |
 
-An allocation can consume several batches or purge several expired roots; do not describe every allocation as O(log n). State complexity in terms of the number of batches exhausted and expired during that request.
+An allocation may exhaust several batches and purge several expired roots; do not describe every allocation as O(log n). State complexity in terms of batches consumed and expired during that request.
 
-## 9. Architecture decision guardrails
+## 9. Change guardrails
 
-Do not add a data structure or module merely to make the project appear more advanced. Any proposed change must pass all three tests:
-
-1. It solves a requirement that is already in the frozen project scope.
-2. It has a clear correctness/performance reason.
-3. It does not invalidate the benchmark protocol or the 7-day delivery target.
-
-If implementation uncovers a genuine contradiction, stop and report the contradiction rather than silently expanding the architecture.
+Do not add a data structure or feature merely to make the project look more advanced. A proposed change must solve a frozen requirement, have a correctness/performance reason, and not invalidate the benchmark protocol or the early finish target. If a real contradiction is discovered, report it before changing the design.
