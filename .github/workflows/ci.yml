@@ -20,6 +20,8 @@ jobs:
         run: make test
       - name: AddressSanitizer and UndefinedBehaviorSanitizer
         run: make test-sanitize
+      - name: Allocation-failure injection
+        run: make test-allocation-failure
       - name: Demo smoke test
         run: ./build/fefo demo
       - name: Simulation smoke test

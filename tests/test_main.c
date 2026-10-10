@@ -3,6 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
+#include <limits.h>
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"FAIL line %d: %s\n",__LINE__,#x);return false;}}while(0)
 static bool test_batch(void){FoodBatch a,b;CHECK(food_batch_init(&a,"A","Pool",1,0,2)==FEFO_OK);CHECK(food_batch_init(&b,"B","Pool",1,0,4)==FEFO_OK);CHECK(food_batch_compare(&a,&b)<0);CHECK(food_batch_eligible(&a,2));CHECK(!food_batch_eligible(&a,3));CHECK(food_batch_init(&a," ","Pool",1,0,2)==FEFO_ERR_INVALID);return true;}
 static bool test_heap(void){FoodBatch b[4];Inventory v={0};FoodBatch *e=NULL;CHECK(inventory_init(&v,POLICY_HEAP_FEFO)==FEFO_OK);CHECK(food_batch_init(&b[0],"D","Pool",1,0,7)==FEFO_OK);CHECK(food_batch_init(&b[1],"B","Pool",1,0,2)==FEFO_OK);CHECK(food_batch_init(&b[2],"A","Pool",1,0,2)==FEFO_OK);CHECK(food_batch_init(&b[3],"C","Pool",1,0,3)==FEFO_OK);for(size_t i=0;i<4;++i)CHECK(inventory_add(&v,&b[i],0)==FEFO_OK);CHECK(inventory_heap_valid(&v));{FoodBatch *bad_items[2]={&b[0],&b[1]};Inventory bad={0};bad.items=bad_items;bad.size=2U;bad.capacity=2U;bad.kind=POLICY_HEAP_FEFO;CHECK(!inventory_heap_valid(&bad));}CHECK(inventory_earliest(&v,0,&e)==FEFO_OK);CHECK(!strcmp(e->id,"A"));inventory_destroy(&v);return true;}
@@ -27,6 +28,45 @@ static bool test_fifo_control_alignment(void){EventTrace t={0};SimulationResult 
 for(i=0;i<6U;++i)t.demands[i].day=(int)i;
 t.demands[1].quantity=1;
 CHECK(simulation_run(&t,POLICY_HEAP_FEFO,&h)==FEFO_OK);CHECK(simulation_run(&t,POLICY_FIFO,&f)==FEFO_OK);CHECK(h.supply==f.supply&&h.demand==f.demand&&h.fulfilled==f.fulfilled&&h.shortfall==f.shortfall&&h.expired==f.expired&&h.remaining==f.remaining);CHECK(h.expired==3&&h.remaining==0&&h.priority_inversions==0U&&f.priority_inversions==0U);event_trace_destroy(&t);return true;}
+
+static bool test_integer_boundaries(void){
+FoodBatch b;Inventory v={0};AllocationResult r={0};
+CHECK(food_batch_init(&b,"MAX-QTY","Pool",INT_MAX,INT_MAX-1,INT_MAX)==FEFO_OK);
+CHECK(food_batch_eligible(&b,INT_MAX));
+CHECK(inventory_init(&v,POLICY_HEAP_FEFO)==FEFO_OK);
+CHECK(inventory_add(&v,&b,INT_MAX)==FEFO_OK);
+CHECK(inventory_allocate(&v,INT_MAX,INT_MAX,&r)==FEFO_OK);
+CHECK(r.requested==INT_MAX&&r.fulfilled==INT_MAX&&r.shortfall==0&&r.line_count==1U);
+CHECK(r.lines[0].quantity==INT_MAX&&strcmp(r.lines[0].batch_id,"MAX-QTY")==0);
+CHECK(b.quantity==0&&b.status==BATCH_EXHAUSTED&&v.size==0U&&inventory_heap_valid(&v));
+allocation_result_destroy(&r);inventory_destroy(&v);
+CHECK(food_batch_init(&b,"BAD-DAY","Pool",1,INT_MAX,INT_MAX-1)==FEFO_ERR_INVALID);
+CHECK(food_batch_init(&b,"BAD-QTY","Pool",INT_MIN,0,INT_MAX)==FEFO_ERR_INVALID);
+return true;
+}
+#ifdef FEFO_TEST_ALLOC_FAILURE
+static bool test_allocation_failure_injection(void){
+FoodBatch b[12];Inventory v={0};AllocationResult out={0};char id[FEFO_BATCH_ID_CAP];size_t i;
+CHECK(inventory_init(&v,POLICY_HEAP_FEFO)==FEFO_OK);
+for(i=0;i<12U;++i){(void)snprintf(id,sizeof(id),"FAIL-%02zu",i);CHECK(food_batch_init(&b[i],id,"Pool",1,0,10)==FEFO_OK);}
+fefo_test_fail_next_allocation();
+CHECK(inventory_add(&v,&b[0],0)==FEFO_ERR_NOMEM);
+CHECK(v.size==0U&&v.map_size==0U&&inventory_lookup(&v,"FAIL-00")==NULL);
+CHECK(inventory_add(&v,&b[0],0)==FEFO_OK);
+for(i=1;i<11U;++i)CHECK(inventory_add(&v,&b[i],0)==FEFO_OK);
+CHECK(v.size==11U&&v.map_size==11U&&v.map_capacity==16U);
+fefo_test_fail_next_allocation();
+CHECK(inventory_add(&v,&b[11],0)==FEFO_ERR_NOMEM);
+CHECK(v.size==11U&&v.map_size==11U&&v.map_capacity==16U&&inventory_lookup(&v,"FAIL-11")==NULL);
+CHECK(inventory_heap_valid(&v));
+CHECK(inventory_add(&v,&b[11],0)==FEFO_OK);
+fefo_test_fail_next_allocation();
+CHECK(inventory_allocate(&v,1,0,&out)==FEFO_ERR_NOMEM);
+CHECK(out.lines==NULL&&out.requested==0&&out.fulfilled==0&&out.shortfall==0);
+CHECK(v.size==12U&&b[0].quantity==1&&inventory_lookup(&v,"FAIL-00")==&b[0]);
+allocation_result_destroy(&out);inventory_destroy(&v);return true;
+}
+#endif
 
 static uint32_t test_rng_next(uint32_t *state){uint32_t x=*state;x^=x<<13;x^=x>>17;x^=x<<5;return *state=x;}
 static bool test_randomized_differential(void){
@@ -66,4 +106,22 @@ return true;
 }
 
 static int run(const char *name,bool(*fn)(void)){if(fn()){printf("[PASS] %s\n",name);return 0;}fprintf(stderr,"[FAIL] %s\n",name);return 1;}
-int main(void){int n=0;n+=run("batch validation and FEFO order",test_batch);n+=run("heap ordering and tie-break",test_heap);n+=run("duplicate IDs and expiry boundary",test_duplicate_and_expiry);n+=run("partial allocation and shortfall",test_allocation);n+=run("hash table growth and lookup",test_hash_growth);n+=run("fixed-seed simulation reproducibility",test_simulation);n+=run("invalid input and NaN rejection",test_validation_edges);n+=run("empty inventory and request shortfall",test_empty_inventory);n+=run("hash collision probing",test_hash_collision);n+=run("FEFO versus FIFO expiry divergence",test_fifo_policy_divergence);n+=run("FEFO/FIFO aligned-order control",test_fifo_control_alignment);n+=run("12-seed randomized heap/linear differential",test_randomized_differential);printf("Tests: %d/12 passed\\n",12-n);return n?1:0;}
+int main(void){int n=0;int total=13;
+n+=run("batch validation and FEFO order",test_batch);
+n+=run("heap ordering and tie-break",test_heap);
+n+=run("duplicate IDs and expiry boundary",test_duplicate_and_expiry);
+n+=run("partial allocation and shortfall",test_allocation);
+n+=run("hash table growth and lookup",test_hash_growth);
+n+=run("fixed-seed simulation reproducibility",test_simulation);
+n+=run("invalid input and NaN rejection",test_validation_edges);
+n+=run("empty inventory and request shortfall",test_empty_inventory);
+n+=run("hash collision probing",test_hash_collision);
+n+=run("FEFO versus FIFO expiry divergence",test_fifo_policy_divergence);
+n+=run("FEFO/FIFO aligned-order control",test_fifo_control_alignment);
+n+=run("INT_MAX quantity and day-boundary arithmetic",test_integer_boundaries);
+n+=run("12-seed randomized heap/linear differential",test_randomized_differential);
+#ifdef FEFO_TEST_ALLOC_FAILURE
+total++;
+n+=run("one-shot allocation failure preserves state",test_allocation_failure_injection);
+#endif
+printf("Tests: %d/%d passed\n",total-n,total);return n?1:0;}

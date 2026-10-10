@@ -45,4 +45,8 @@ void fefo_metrics_reset(void);
 void fefo_metrics_enable(bool enabled);
 FefoOperationMetrics fefo_metrics_snapshot(void);
 FefoStatus benchmark_operation_counts(FILE *stream);
+#ifdef FEFO_TEST_ALLOC_FAILURE
+/* Test-only one-shot allocator fault injection. */
+void fefo_test_fail_next_allocation(void);
+#endif
 #endif
