@@ -12,7 +12,7 @@ Use **VS Code + its integrated PowerShell terminal**. The approved project scope
 1. Install VS Code and a C compiler (GCC via MSYS2/MinGW-w64, or Clang).
 2. Open the repository folder `expiry-aware-food-inventory-prioritization` in VS Code.
 3. In Terminal → New Terminal, confirm that the prompt is at the repository root.
-4. Run `.` followed by `\demo.ps1 -Quick` (see the exact command below). If PowerShell blocks scripts, use the command only in a terminal for this project and follow your institution's device policy; do not change system-wide execution policy just for the demo.
+4. Run ` .\demo.ps1 -Quick` from the repository root (see the exact command below). If PowerShell blocks scripts, use the command only in a terminal for this project and follow your institution's device policy; do not change system-wide execution policy just for the demo.
 
 Exact command:
 
@@ -34,8 +34,8 @@ It additionally writes the 180-row FEFO-vs-FIFO policy matrix, five-size seven-t
 
 1. **Problem:** batches may arrive in one order and expire in another; FIFO and FEFO are not interchangeable.
 2. **Core data structure:** open `src/engine.c` and `include/fefo/engine.h`; show the comparator, heap insert/extract and the batch model.
-3. **Live selection:** run `.`\build\fefo.exe demo`. Explain why the earliest-expiring eligible batch is chosen, how partial allocation works, and how a shortfall is reported.
-4. **Policy comparison:** run `.`\build\fefo.exe simulate 100`. Explain that the same generated arrivals/demand are replayed against heap FEFO, linear FEFO and FIFO; outputs are synthetic.
+3. **Live selection:** run ` .\build\fefo.exe demo`. Explain why the earliest-expiring eligible batch is chosen, how partial allocation works, and how a shortfall is reported.
+4. **Policy comparison:** run ` .\build\fefo.exe simulate 100`. Explain that the same generated arrivals/demand are replayed against heap FEFO, linear FEFO and FIFO; outputs are synthetic.
 5. **Evidence:** open `results/generated/policy_simulation.csv`. For the full run, also show `policy_experiment_summary.csv`, `structure_benchmark_summary.csv` and `structure_operation_counts.csv`.
 6. **Correctness and limits:** state that CI passed 13/13 regular test groups, 14/14 allocation-failure-build groups, ASan/UBSan and the benchmark smoke tests. Timing is specific to the CI runner/workload; the program does not assess physical food safety or prove real-world food-waste savings.
 
