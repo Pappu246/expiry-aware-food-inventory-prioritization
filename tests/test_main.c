@@ -38,9 +38,11 @@ arrivals[0].day=1;arrivals[1].day=0;CHECK(simulation_run(&trace,POLICY_HEAP_FEFO
 arrivals[0].day=2;CHECK(simulation_run(&trace,POLICY_HEAP_FEFO,&result)==FEFO_ERR_INVALID);arrivals[0].day=0;
 memset(arrivals[0].batch_id,'X',sizeof(arrivals[0].batch_id));CHECK(simulation_run(&trace,POLICY_HEAP_FEFO,&result)==FEFO_ERR_INVALID);(void)snprintf(arrivals[0].batch_id,sizeof(arrivals[0].batch_id),"A");
 arrivals[0].expiry_day=-1;CHECK(simulation_run(&trace,POLICY_HEAP_FEFO,&result)==FEFO_ERR_INVALID);arrivals[0].expiry_day=3;
+arrivals[0].received_day=1;CHECK(simulation_run(&trace,POLICY_HEAP_FEFO,&result)==FEFO_ERR_INVALID);arrivals[0].received_day=0;
 trace.total_supply=1;CHECK(simulation_run(&trace,POLICY_HEAP_FEFO,&result)==FEFO_ERR_INVALID);trace.total_supply=2;
 trace.horizon_days=0;CHECK(simulation_run(&trace,POLICY_HEAP_FEFO,&result)==FEFO_ERR_INVALID);trace.horizon_days=2;
 CHECK(simulation_run(&trace,(PolicyKind)99,&result)==FEFO_ERR_INVALID);
+{Inventory fifo={0};FoodBatch batch;FoodBatch *next=NULL;CHECK(food_batch_init(&batch,"FIFO-1","Pool",1,0,3)==FEFO_OK);CHECK(inventory_init(&fifo,POLICY_FIFO)==FEFO_OK);CHECK(inventory_add(&fifo,&batch,0)==FEFO_OK);CHECK(inventory_earliest(&fifo,0,&next)==FEFO_ERR_INVALID&&next==NULL);inventory_destroy(&fifo);}
 return true;
 }
 static bool test_empty_inventory(void){Inventory v={0};AllocationResult r={0};FoodBatch *b=NULL;CHECK(inventory_init(&v,POLICY_HEAP_FEFO)==FEFO_OK);CHECK(inventory_earliest(&v,0,&b)==FEFO_ERR_EMPTY&&b==NULL);CHECK(inventory_heap_valid(&v));CHECK(inventory_allocate(&v,5,0,&r)==FEFO_OK);CHECK(r.requested==5&&r.fulfilled==0&&r.shortfall==5&&r.outcome==ALLOC_EMPTY&&r.line_count==0);allocation_result_destroy(&r);inventory_destroy(&v);return true;}

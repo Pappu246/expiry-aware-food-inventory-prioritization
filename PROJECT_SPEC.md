@@ -112,7 +112,7 @@ No backorders are implemented. Partial fulfillment is allowed. Temporary holds a
 - **Custom binary Min-Heap:** primary FEFO structure; supports insert, peek-min, extract-min, size/empty, and invariant validation.
 - **Custom hash table:** maps batch ID to the same FoodBatch pointer; supports expected fast lookup and duplicate rejection. Use open addressing with linear probing and grow/rehash before the load factor exceeds 0.70. There are no map deletions in the MVP; IDs remain reserved after exhaustion.
 - **Unsorted dynamic array/list:** used by the linear FEFO baseline and correctness oracle.
-- **FIFO queue:** used only by the FIFO policy baseline; not part of the heap-based FEFO engine.
+- **FIFO baseline storage:** an arrival-ordered dynamic array preserving queue order; used only for policy simulation, not the heap-based FEFO engine. Exhausted-front removal and expiry filtering may be O(n) in this implementation.
 - **Minimal in-memory event records:** for reproducibility and shared accounting, not a full transaction-history subsystem.
 
 Do not add Stack, Graph, balanced tree, or other structures merely to make the project look more advanced.
@@ -127,7 +127,7 @@ Measure aggregate operation time, comparison count, and selected batch sequence.
 
 ### Experiment B — Policy effect
 
-Compare FEFO with FIFO under the same arrivals, demand, day order, and expiry boundary. Measure simulated expired quantity, fulfilled quantity, shortfall, and remaining unexpired stock. This is not a pure speed contest; queue operations can be O(1), but filtering expired items within FIFO can require a linear pass.
+Compare FEFO with FIFO under the same arrivals, demand, day order, and expiry boundary. Measure simulated expired quantity, fulfilled quantity, shortfall, and remaining unexpired stock. This is not a pure speed contest. In the current FIFO array implementation, exhausted-front removal shifts remaining pointers and expiry filtering scans/compacts entries, so both can require O(n).
 
 ## 11. Correctness and quality requirements
 

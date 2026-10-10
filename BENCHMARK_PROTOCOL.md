@@ -119,7 +119,7 @@ Under identical inventory arrivals and demand, how do FEFO and FIFO differ in fu
 - **FEFO:** selects the earliest-expiring eligible batch with the frozen comparator.
 - **FIFO:** selects the oldest received eligible batch, with batch ID as a deterministic same-day tie-break.
 
-FIFO queue push/pop operations are O(1), but an expiry-maintenance pass must find expired entries wherever they occur in arrival order and may take O(n). Do not claim the whole FIFO policy is unconditionally O(1).
+The FIFO baseline uses an arrival-ordered dynamic array, not a circular queue. Exhausted-front removal shifts remaining pointers and therefore can be O(n); expiry maintenance also scans/compacts entries in O(n). The policy experiment compares operational outcomes rather than FIFO operation speed.
 
 ### Simulation sizes
 

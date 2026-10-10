@@ -159,7 +159,7 @@ Store a dynamic array of batch pointers. For each selection, scan eligible entri
 
 ### FIFO baseline
 
-Use an arrival-ordered queue of batch pointers, breaking same-day ties by batch ID. FIFO is only used for the policy experiment. Because expiry order can differ from arrival order, the start-of-day expiry-maintenance step filters expired entries wherever they occur while preserving the order of remaining eligible entries. This filtering may be O(n); do not claim FIFO's whole policy maintenance is always O(1).
+The simulator stores FIFO batches in an arrival-ordered dynamic array, breaking same-day ties by batch ID. FIFO is only used for the policy experiment. When a batch is exhausted at the front, this implementation shifts remaining pointers, so front removal is O(n); expiry maintenance also filters expired entries wherever they occur while preserving order and may be O(n). Do not describe this array implementation as providing O(1) dequeue.
 
 ### Immutable event trace and simulation
 
@@ -244,7 +244,8 @@ Allocation results should include requested quantity, fulfilled quantity, shortf
 | Heap extract-min | O(log n) |
 | Open-addressed hash lookup | Expected O(1) at controlled load factor; worst case O(n) |
 | Linear FEFO selection | O(n) per selection |
-| FIFO enqueue/dequeue | O(1) queue operation |
+| FIFO append | Amortized O(1) array append (excluding ID-map growth) |
+| FIFO exhausted-front removal | O(n) pointer shifting in the arrival-ordered array |
 | FIFO expiry filter | O(n) in queued batch count |
 | Heapify, if used | O(n) |
 | Repeated insertion initial build | O(n log n) |
