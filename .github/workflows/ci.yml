@@ -26,6 +26,9 @@ jobs:
             else { Write-Host ("PASS: " + $path) }
           }
           if ($failed) { throw "PowerShell syntax validation failed" }
+      - name: Clang static analysis
+        shell: bash
+        run: clang --analyze -D_POSIX_C_SOURCE=200809L -Iinclude -std=c11 -Wall -Wextra -Wpedantic -Werror src/main.c src/engine.c
       - name: Clang build and regression tests
         shell: bash
         run: |
@@ -62,4 +65,23 @@ jobs:
           name: generated-results-${{ github.sha }}
           path: results/generated/*.csv
           if-no-files-found: warn
+          retention-days: 30
+      - name: Archive runnable source snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runnable-source-${{ github.sha }}
+          path: |
+            .github/workflows/ci.yml
+            include/**
+            src/**
+            tests/**
+            Makefile
+            build.ps1
+            demo.ps1
+            README.md
+            DEMO_GUIDE.md
+            PROJECT_SPEC.md
+            BENCHMARK_PROTOCOL.md
+          if-no-files-found: error
           retention-days: 30

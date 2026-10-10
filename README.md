@@ -3,6 +3,8 @@
 A dependency-free C11 Data Structures project: a custom binary Min-Heap for FEFO (First Expire, First Out), open-addressing hash table for batch lookup and duplicate rejection, a linear-scan FEFO baseline, and a FIFO policy simulator.
 
 ## Faculty demo on Windows (VS Code)
+
+The submission ZIP now carries the complete C11 source tree and build/demo scripts, so you can extract the package and run it offline without needing to clone the private repository first.
 ~~~powershell
 .\demo.ps1 -Quick
 # Generate all benchmark and policy CSV evidence as well:
