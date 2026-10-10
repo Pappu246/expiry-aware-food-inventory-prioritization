@@ -85,3 +85,41 @@ jobs:
             BENCHMARK_PROTOCOL.md
           if-no-files-found: error
           retention-days: 30
+
+  windows-demo:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up MinGW-w64 GCC
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: mingw-w64-x86_64-gcc
+      - name: Verify Windows C11 compiler
+        shell: pwsh
+        run: gcc --version
+      - name: Run complete Windows demo and evidence generation
+        shell: pwsh
+        run: .\demo.ps1
+      - name: Verify Windows CSV outputs
+        shell: pwsh
+        run: |
+          $expected = @{
+            "policy_simulation.csv" = 3
+            "policy_experiment_raw.csv" = 180
+            "policy_experiment_summary.csv" = 18
+            "structure_benchmark.csv" = 70
+            "structure_benchmark_summary.csv" = 5
+            "structure_operation_counts.csv" = 10
+          }
+          foreach ($name in $expected.Keys) {
+            $path = Join-Path "results\generated" $name
+            if (-not (Test-Path $path)) { throw "Missing Windows output: $path" }
+            $rows = @(Import-Csv $path)
+            if ($rows.Count -ne $expected[$name]) {
+              throw "$name has $($rows.Count) data rows, expected $($expected[$name])"
+            }
+            Write-Host "PASS: $name ($($rows.Count) data rows)"
+          }
+
