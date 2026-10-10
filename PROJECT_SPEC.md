@@ -157,11 +157,11 @@ This is a scheduling/prioritization prototype, not a food-safety decision system
 5. Benchmark runner and controlled policy simulator.
 6. CSV result exports and report-ready tables/graphs.
 7. README, architecture, benchmark protocol, test evidence, and limitations.
-8. A 20–25-page A-6 report, presentation, and viva preparation.
+8. A complete A-6 report with supporting appendices, a presentation, and viva preparation; the report follows the supplied VGU notice and does not assume an unprovided page-count template.
 
 ### Implementation and submission status
 
-At the audited branch head, the repository contains the C11 CLI, custom heap/hash-table engine, linear FEFO baseline, FIFO simulation, thirteen-test harness with INT_MAX boundary cases, test-only allocation-failure injection, CI, raw/summary benchmark CSV export and the full 10-seed / three-ratio policy experiment command. The generated report, slide deck, viva notes and figures are available separately in the submission package. Instrumented comparator/operation counts are now exported separately. Controlled one-shot allocation-failure injection and INT_MAX quantity/day-boundary tests are implemented as a separate CI gate; the 12-seed randomized differential suite and sanitizer CI step remain enabled. The audit branch is intentionally not merged into dev/main. Faculty-specific report/template compliance still needs confirmation.
+At the audited branch head, the repository contains the C11 CLI, custom heap/hash-table engine, linear FEFO baseline, FIFO simulation, thirteen-test harness with INT_MAX boundary cases, test-only allocation-failure injection, CI, raw/summary benchmark CSV export and the full 10-seed / three-ratio policy experiment command. The generated report, slide deck, viva notes and figures are available separately in the submission package. Instrumented comparator/operation counts are now exported separately. Controlled one-shot allocation-failure injection and INT_MAX quantity/day-boundary tests are implemented as a separate CI gate; the 12-seed randomized differential suite, malformed-trace tests, GCC/Clang checks, static analysis, sanitizer CI, PowerShell parser checks and runnable-source artifact are enabled and passed in the latest verified run. The report, 14-slide presentation, viva notes, runnable C11 source tree and six CSV result files are bundled in the submission package. The audit branch is intentionally not merged into dev/main. The supplied notice does not require an additional report template.
 
 ## 14. Source context
 
