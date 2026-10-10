@@ -140,6 +140,7 @@ Compare FEFO with FIFO under the same arrivals, demand, day order, and expiry bo
 - Empty inventory and shortfall are explicit.
 - Waste is counted once via shared simulation accounting.
 - Fixed-seed results are reproducible.
+- Malformed simulation traces are rejected before processing when event order, day ranges, bounded strings, demand quantities, metadata totals, or policy values are invalid.
 - No made-up or hard-coded performance values are presented as measured findings.
 - All allocations and memory are checked for failure where appropriate; owned memory is freed.
 
