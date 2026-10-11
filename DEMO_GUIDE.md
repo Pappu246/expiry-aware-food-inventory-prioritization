@@ -1,11 +1,11 @@
 # Live Demonstration Guide (Windows + VS Code)
 
 Project: **Expiry-Aware Food Inventory Prioritization Engine Using Data Structures**  
-Language: C11 • Interface: command-line prototype • Data: reproducible synthetic workloads
+Core research engine: C11 command-line prototype • Optional practical UI: local-first Node.js website • Benchmark data: reproducible synthetic workloads
 
 ## What to show the faculty
 
-Use **VS Code + its integrated PowerShell terminal**. The approved project scope is a C11 command-line prototype; a website is not part of this project's requirements, so do not present it as a website or spend time building a web UI.
+Use **VS Code + its integrated PowerShell terminal** for the main C11 DSA demonstration. The repository also contains a separate, optional local-first FreshTrack website and practical C inventory app. Lead with the C engine and measured DSA experiments for the academic rubric; show the website only as an additional usability interface, not as the implementation behind the C benchmark results.
 
 ### Before the presentation
 
@@ -39,9 +39,9 @@ It additionally writes the 180-row FEFO-vs-FIFO policy matrix, five-size seven-t
 5. **Evidence:** open `results/generated/policy_simulation.csv`. For the full run, also show `policy_experiment_summary.csv`, `structure_benchmark_summary.csv` and `structure_operation_counts.csv`.
 6. **Correctness and limits:** state that CI passed 13/13 regular test groups, 14/14 allocation-failure-build groups, ASan/UBSan and the benchmark smoke tests. Timing is specific to the CI runner/workload; the program does not assess physical food safety or prove real-world food-waste savings.
 
-## If the teacher asks “Why no website?”
+## If the teacher asks about the website
 
-“This project was scoped as a dependency-free C11 command-line Data Structures prototype. Its purpose is to demonstrate the Min-Heap, hash table, a linear FEFO correctness baseline, the FIFO policy experiment and measured CSV evidence. A web UI would add scope without strengthening the central algorithm comparison.”
+“The core research and performance comparison is in the dependency-free C11 program, which implements the Min-Heap, hash table and independent linear FEFO baseline. The repository also includes a separate local-first Node.js website for practical inventory workflows. The website uses a sort-based FEFO/FIFO allocator and has its own tests; I do not attribute the C engine's Min-Heap benchmark results to the website.”
 
 ## If a command fails
 
