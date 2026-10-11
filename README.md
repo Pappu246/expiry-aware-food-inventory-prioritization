@@ -16,6 +16,7 @@
 - **Benchmark methodology:** [BENCHMARK_PROTOCOL.md](BENCHMARK_PROTOCOL.md)
 - **Practical app guide:** [PRACTICAL_APP_GUIDE.md](PRACTICAL_APP_GUIDE.md)
 - **VGU A6 rubric alignment:** [A6_Rubric_Alignment.md](A6_Rubric_Alignment.md)
+- **Submission bundle (PDF/DOCX/PPTX reports, viva notes, rubric and figures):** [Download ZIP](submission/A6_Submission_Artifacts.zip)
 - **Tests:** [tests/](tests/)
 - **Benchmark and experiment CSVs:** [CSV results in repository root](./)
 
