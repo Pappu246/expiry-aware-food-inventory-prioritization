@@ -28,4 +28,4 @@ The benchmark inputs are synthetic research data; do not confuse them with your 
 
 ## Website test suite
 
-From the `website` folder run `npm test`. The current website package contains 27 automated tests covering validation, expiry rules, FEFO/FIFO allocation, concurrency, backups/recovery, CSV behavior, API integration, and persistence across process restart.
+From the `website` folder run `npm test`. The current website package contains 28 automated tests covering validation, expiry rules, FEFO/FIFO allocation, concurrency, backups/recovery, CSV behavior, API integration, and persistence across process restart.

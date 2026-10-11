@@ -37,7 +37,7 @@ The project does not claim to eliminate food waste or improve a real institution
 
 ## 4. Non-goals
 
-The MVP will not implement a commercial inventory system, ERP, donation marketplace, NGO matching, recipient recommendation, GPS, road routing, AI/ML, demand forecasting, barcode hardware, mobile application, web application, authentication, cloud deployment, database server, food-safety certification, cold-chain monitoring, allergen handling, recall handling, complex multi-SKU allocation, or a large user interface.
+The core DSA engine will not implement a commercial inventory system, ERP, donation marketplace, NGO matching, recipient recommendation, GPS, road routing, AI/ML, demand forecasting, barcode hardware, mobile application, cloud deployment, database server, authentication, multi-user web service, food-safety certification, cold-chain monitoring, allergen handling, recall handling, complex multi-SKU allocation, or a large user interface. The repository also includes a separate optional local-first browser application and a client-only showcase for coursework usability; neither is part of the C engine's benchmark claims, and neither synchronizes its records with the C command-line app.
 
 ## 5. Operating assumptions
 

@@ -1,7 +1,19 @@
 # CI verification snapshot
 
+## Current repository verification — 11 October 2026
+
+- Current main commit: `42a246a1e4cd29afa065466b43c57ecee732d581`
+- Latest C11 CI run: [GitHub Actions run 38154078428](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38154078428) — **success**.
+- Verified pipeline results: C11 CLI and inventory app built with GCC; engine suite 13/13; allocation-failure suite 14/14; four grouped app smoke scenarios passed; showcase tests 4/4; ASan/UBSan suite 13/13; website suite 28/28.
+- Current C11 workflow is [.github/workflows/ci.yml](.github/workflows/ci.yml). It runs one Ubuntu job with GCC and Node's built-in test runner; it does **not** currently define a Node 20/22 matrix or Clang/PowerShell CI steps.
+- `main`, `dev`, `audit/benchmark-correctness`, `c11-clean-main-2026-10-11`, and `c11-full-inventory-app-2026-10-11` were verified at the same commit SHA above.
+- Hosting is not verified as live: the most recent known Vercel check reports the account deployment build-rate limit, while the Pages workflow's configure step was denied permission to create a Pages site.
+
+The remaining bullets and benchmark table below preserve a **historical validation snapshot** from an earlier commit. Do not interpret its branch state, artifact IDs, or CI-step list as the current workflow configuration.
+
+
 - Repository: https://github.com/Pappu246/expiry-aware-food-inventory-prioritization
-- Audited branch: `audit/benchmark-correctness` (isolated; not merged into `dev` or `main`)
+- Historical audited branch at the time of that run: `audit/benchmark-correctness` (it was later synchronized with current `main`; see current verification above).
 - Verified commit: `7448b507d72837ecd6cbad44ad703bad9715be57`
 - Successful GitHub Actions run: https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38035688983
 - Generated-results artifact ID: `11664281424`; expires 9 November 2026
@@ -35,5 +47,5 @@ The interactive application `src/inventory_app.c` was added after the GitHub Act
 
 - Added `website/`, a local-first browser application with its own Node.js HTTP API and JSON persistence. It is a separate application from the C command-line app; their inventory files are not synchronized.
 - Local verification using Node.js **v22.16.0** for the included website source: `node --check server.js`, `node --check lib/inventory.js`, `node --check public/app.js` passed, and the Node test runner reported **15/15 passing tests** (unit plus HTTP integration tests).
-- The workflow now contains a `website-tests` matrix for Node.js 20 and 22. No new remote GitHub Actions run is claimed from this packaging environment; the job must run in GitHub to confirm those CI runners.
+- Historical note superseded by current remote verification above: the current website suite passed 28/28 tests in the C11 CI run linked at the top. The active workflow does not configure a Node.js 20/22 matrix.
 - Website scope remains local-only. No public deployment, hosted database, authentication, or multi-user production operation is included.
