@@ -11,7 +11,7 @@
 
 The website saves its stock and movement history in `website\data\inventory.json`; the previous valid state is stored at `website\data\inventory.json.bak` after a change. Keep the project folder writable and back up important inventory data. The website is local-only: there is no login or shared cloud database, and it must not be exposed directly to the public internet.
 
-The C command-line app stores its data separately under root `data\`; its records do not automatically sync with the website.
+ The C command-line app stores its data separately under root \`data\\\`; its records do not automatically sync with the website. If the C app reports a malformed saved inventory and exits without loading it, do not delete either file: copy both \`data\\inventory.csv\` and \`data\\inventory_backup.csv\` somewhere safe, then restore a known-good CSV backup to \`data\\inventory.csv\` before restarting. The app now refuses to save a partial load over the original file.
 
 ## Secondary application: C11 command-line version
 

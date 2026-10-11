@@ -119,6 +119,39 @@ def main() -> int:
             raise AssertionError("expiry status change was not written to transaction history")
         print("PASS: date-based expiry transition and expiry-day eligibility boundary")
 
+    with tempfile.TemporaryDirectory(prefix="a6-inventory-corrupt-load-") as temp:
+        root = pathlib.Path(temp)
+        data_dir = root / "data"
+        data_dir.mkdir()
+        today = dt.date.today()
+        expiry = (today + dt.timedelta(days=15)).isoformat()
+        inventory_path = data_dir / "inventory.csv"
+        backup_path = data_dir / "inventory_backup.csv"
+        original_inventory = (
+            "batch_id,item,quantity,received_date,expiry_date,status\n"
+            f"VALID-1,Rice,2,{today.isoformat()},{expiry},ACTIVE\n"
+            f"BROKEN-1,Beans,not-a-number,{today.isoformat()},{expiry},ACTIVE\n"
+        ).encode("utf-8")
+        known_good_backup = (
+            "batch_id,item,quantity,received_date,expiry_date,status\n"
+            f"BACKUP-1,Oats,9,{today.isoformat()},{expiry},ACTIVE\n"
+        ).encode("utf-8")
+        inventory_path.write_bytes(original_inventory)
+        backup_path.write_bytes(known_good_backup)
+        proc = subprocess.run(
+            [str(exe)], cwd=root, input="0\n", text=True,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=20,
+        )
+        if proc.returncode == 0:
+            raise AssertionError("app should fail closed when it cannot load the entire saved inventory")
+        if "refusing to load partial stock" not in proc.stdout or "stopped without rewriting" not in proc.stdout:
+            raise AssertionError(f"corrupt inventory recovery warning was missing\n{proc.stdout[-3000:]}")
+        if inventory_path.read_bytes() != original_inventory:
+            raise AssertionError("app rewrote the original malformed inventory instead of preserving it")
+        if backup_path.read_bytes() != known_good_backup:
+            raise AssertionError("app overwrote the known-good previous inventory backup")
+        print("PASS: malformed inventory fails closed without overwriting current or backup data")
+
     return 0
 
 

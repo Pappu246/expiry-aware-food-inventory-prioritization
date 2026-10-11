@@ -39,6 +39,7 @@ static FoodBatch g_batches[APP_MAX_BATCHES];
 static size_t g_batch_count = 0U;
 static int g_low_stock_threshold = DEFAULT_LOW_STOCK;
 static int g_today = 0;
+static bool g_inventory_load_failed = false;
 
 static void ensure_data_dir(void) {
 #ifdef _WIN32
@@ -473,59 +474,117 @@ static bool add_to_memory(const char *id, const char *item, int qty, int receive
 }
 
 static void load_inventory(void) {
+    static const char *expected_header[6] = {
+        "batch_id", "item", "quantity", "received_date", "expiry_date", "status"
+    };
     FILE *f = fopen(INVENTORY_FILE, "r");
     char fields[CSV_MAX_FIELDS][CSV_FIELD_CAP];
-    size_t field_count = 0U, line_no = 0U;
+    size_t field_count = 0U, line_no = 0U, i;
     int row_result;
     if (!f) {
-        if (!save_inventory()) fprintf(stderr, "Warning: unable to initialise inventory storage.\n");
+        if (errno == ENOENT) {
+            if (!save_inventory()) {
+                fprintf(stderr, "Warning: unable to initialise inventory storage.\n");
+                g_inventory_load_failed = true;
+            }
+        } else {
+            perror("Cannot read existing inventory file");
+            g_inventory_load_failed = true;
+        }
         return;
     }
+
     row_result = csv_read_row(f, fields, &field_count);
-    if (row_result <= 0) { (void)fclose(f); return; }
-    ++line_no; /* header */
+    if (row_result <= 0 || field_count != 6U) {
+        fprintf(stderr, "ERROR: inventory CSV is empty or its header is malformed.\n");
+        g_inventory_load_failed = true;
+        (void)fclose(f);
+        return;
+    }
+    for (i = 0U; i < 6U; ++i) {
+        if (compare_case_insensitive(fields[i], expected_header[i]) != 0) {
+            fprintf(stderr, "ERROR: inventory CSV header does not match the expected format.\n");
+            g_inventory_load_failed = true;
+            (void)fclose(f);
+            return;
+        }
+    }
+    ++line_no;
+
     while ((row_result = csv_read_row(f, fields, &field_count)) != 0) {
         int quantity, received, expiry;
         BatchStatus status;
         FoodBatch *b;
         if (row_result < 0 || field_count != 6U || !fields[0][0] || !fields[1][0] ||
             !parse_int_strict(fields[2], &quantity) || quantity < 0 ||
-            !parse_date(fields[3], &received) || !parse_date(fields[4], &expiry) || received > g_today || expiry < received ||
-            !parse_status(fields[5], &status) || strlen(fields[0]) >= FEFO_BATCH_ID_CAP || strlen(fields[1]) >= FEFO_ITEM_NAME_CAP) {
-            fprintf(stderr, "Warning: skipped malformed inventory row near line %lu.\n", (unsigned long)(line_no + 1U)); ++line_no; continue;
+            !parse_date(fields[3], &received) || !parse_date(fields[4], &expiry) ||
+            received > g_today || expiry < received || !parse_status(fields[5], &status) ||
+            strlen(fields[0]) >= FEFO_BATCH_ID_CAP || strlen(fields[1]) >= FEFO_ITEM_NAME_CAP) {
+            fprintf(stderr, "ERROR: malformed inventory row near line %lu; refusing to load partial stock.\n",
+                    (unsigned long)(line_no + 1U));
+            g_inventory_load_failed = true;
+            break;
         }
-        if (g_batch_count >= APP_MAX_BATCHES) { fprintf(stderr, "Warning: inventory exceeds app limit; remaining rows ignored.\n"); break; }
-        if (id_exists(fields[0])) { fprintf(stderr, "Warning: duplicate batch ID '%s' in saved data; later row skipped.\n", fields[0]); ++line_no; continue; }
+        if (g_batch_count >= APP_MAX_BATCHES) {
+            fprintf(stderr, "ERROR: inventory exceeds the app limit; refusing to load partial stock.\n");
+            g_inventory_load_failed = true;
+            break;
+        }
+        if (id_exists(fields[0])) {
+            fprintf(stderr, "ERROR: duplicate batch ID '%s' in saved data; refusing partial load.\n", fields[0]);
+            g_inventory_load_failed = true;
+            break;
+        }
         b = &g_batches[g_batch_count];
         memset(b, 0, sizeof(*b));
         (void)memcpy(b->id, fields[0], strlen(fields[0]) + 1U);
         (void)memcpy(b->item, fields[1], strlen(fields[1]) + 1U);
-        b->quantity = quantity; b->received_day = received; b->expiry_day = expiry; b->status = status;
+        b->quantity = quantity;
+        b->received_day = received;
+        b->expiry_day = expiry;
+        b->status = status;
         if (b->status == BATCH_ACTIVE && b->quantity == 0) b->status = BATCH_EXHAUSTED;
-        ++g_batch_count; ++line_no;
+        ++g_batch_count;
+        ++line_no;
     }
-    if (ferror(f)) fprintf(stderr, "Warning: read error while loading saved inventory.\n");
-    (void)fclose(f);
-}
 
+    if (ferror(f)) {
+        fprintf(stderr, "ERROR: read error while loading saved inventory; refusing to save a partial result.\n");
+        g_inventory_load_failed = true;
+    }
+    if (fclose(f) != 0) {
+        fprintf(stderr, "ERROR: closing the inventory file failed; refusing to save a partial result.\n");
+        g_inventory_load_failed = true;
+    }
+}
 static size_t mark_expired_batches(void) {
+    FoodBatch *changed_batches[APP_MAX_BATCHES];
     size_t i, changed = 0U;
     for (i = 0U; i < g_batch_count; ++i) {
         FoodBatch *b = &g_batches[i];
         if (b->status == BATCH_ACTIVE && b->quantity > 0 && g_today > b->expiry_day) {
             b->status = BATCH_EXPIRED;
-            ++changed;
-            if (!append_transaction("EXPIRE", b->item, b->id, b->quantity, "Date-based inventory alert; follow local food-safety procedure"))
-                fprintf(stderr, "Warning: could not write expiry event for %s.\n", b->id);
+            changed_batches[changed++] = b;
         }
     }
-    if (changed > 0U) {
-        printf("Expiry check: %lu batch(es) moved to EXPIRED status.\n", (unsigned long)changed);
-        if (!save_inventory()) puts("Warning: expiry status could not be saved.");
+    if (changed == 0U) return 0U;
+
+    if (!save_inventory()) {
+        for (i = 0U; i < changed; ++i) changed_batches[i]->status = BATCH_ACTIVE;
+        puts("Warning: expiry status changes were not saved; they were rolled back and no EXPIRE events were logged.");
+        return 0U;
     }
+
+    for (i = 0U; i < changed; ++i) {
+        FoodBatch *b = changed_batches[i];
+        if (!append_transaction("EXPIRE", b->item, b->id, b->quantity,
+                                "Date-based inventory alert; follow local food-safety procedure")) {
+            fprintf(stderr, "Warning: inventory status was saved, but EXPIRE event logging failed for %s.\n", b->id);
+        }
+    }
+    printf("Expiry check: %lu batch(es) moved to EXPIRED status.\n", (unsigned long)changed);
     return changed;
 }
-
 static int batch_expiry_ptr_compare(const void *left, const void *right) {
     const FoodBatch *a = *(FoodBatch * const *)left;
     const FoodBatch *b = *(FoodBatch * const *)right;
@@ -989,6 +1048,10 @@ int main(void) {
     load_settings();
     ensure_transaction_file();
     load_inventory();
+    if (g_inventory_load_failed) {
+        fprintf(stderr, "Inventory load was incomplete. The app stopped without rewriting data/inventory.csv. Preserve both inventory.csv and inventory_backup.csv, then recover from a known-good copy before restarting.\n");
+        return 2;
+    }
     (void)mark_expired_batches();
     if (g_batch_count > 0U && !save_inventory()) puts("Warning: could not refresh saved inventory after startup.");
     puts("Inventory data location: data/inventory.csv");
