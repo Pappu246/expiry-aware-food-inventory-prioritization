@@ -81,15 +81,18 @@ def main() -> int:
             "batch_id,item,quantity,received_date,expiry_date\n"
             f'IMP-1,"Rice, Premium",4,{today.isoformat()},{expiry}\n'
             f'IMP-2,Beans,3,{today.isoformat()},{expiry}\n'
-            f'IMP-OLD,Expired Item,8,{today.isoformat()},{(today - dt.timedelta(days=1)).isoformat()}\n',
+            f'IMP-OLD,Expired Item,8,{today.isoformat()},{(today - dt.timedelta(days=1)).isoformat()}\n'
+            f'IMP-SIGNED-MONTH,Malformed,1,{today.isoformat()},{today.year + 1:04d}-+1-02\n'
+            f'IMP-SIGNED-DAY,Malformed,1,{today.isoformat()},{today.year + 1:04d}-01-+2\n',
             encoding="utf-8",
         )
         output = run_app(exe, root, f"9\n{csv_path}\n2\n0\n")
-        if "2 added, 1 skipped" not in output:
+        if "2 added, 3 skipped" not in output:
             raise AssertionError(f"CSV import validation result was unexpected\n{output[-5000:]}")
         rows = read_inventory(root / "data" / "inventory.csv")
-        if rows.get("IMP-1", {}).get("item") != "Rice, Premium" or "IMP-OLD" in rows:
-            raise AssertionError("quoted CSV item or expired-row rejection failed")
+        if (rows.get("IMP-1", {}).get("item") != "Rice, Premium" or
+                any(key in rows for key in ("IMP-OLD", "IMP-SIGNED-MONTH", "IMP-SIGNED-DAY"))):
+            raise AssertionError("quoted CSV item or invalid/expired-date rejection failed")
         print("PASS: CSV bulk import, quoted item names, and expired-row rejection")
 
     with tempfile.TemporaryDirectory(prefix="a6-inventory-expiry-") as temp:

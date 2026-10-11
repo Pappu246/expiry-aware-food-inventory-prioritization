@@ -157,10 +157,15 @@ static void civil_from_days(int day_number, int *year, unsigned *month, unsigned
 
 static bool parse_date(const char *text, int *day_number) {
     int year, month, day;
-    char tail;
+    size_t i;
     long long serial;
-    if (!text || strlen(text) != 10U || text[4] != '-' || text[7] != '-') return false;
-    if (sscanf(text, "%4d-%2d-%2d%c", &year, &month, &day, &tail) != 3) return false;
+    if (!text || !day_number || strlen(text) != 10U || text[4] != '-' || text[7] != '-') return false;
+    for (i = 0U; i < 10U; ++i) {
+        if (i != 4U && i != 7U && !isdigit((unsigned char)text[i])) return false;
+    }
+    year = (text[0] - '0') * 1000 + (text[1] - '0') * 100 + (text[2] - '0') * 10 + (text[3] - '0');
+    month = (text[5] - '0') * 10 + (text[6] - '0');
+    day = (text[8] - '0') * 10 + (text[9] - '0');
     if (year < 1970 || year > 9999 || month < 1 || month > 12 || day < 1 || day > days_in_month(year, month)) return false;
     serial = days_from_civil(year, (unsigned)month, (unsigned)day);
     if (serial < 0 || serial > INT_MAX) return false;
