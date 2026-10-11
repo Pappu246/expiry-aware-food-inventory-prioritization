@@ -105,10 +105,10 @@ def verify_archive(path: Path, prefix: str, tracked: list[str]) -> None:
             info_by_name[key] = info
         files = {name: archive.read(info) for name, info in info_by_name.items() if not info.is_dir()}
 
-    lower_basenames = {PurePosixPath(name).name.lower(): name for name in files}
-    missing = [name for name in REQUIRED_DELIVERABLES if name not in lower_basenames]
-    if missing:
-        fail(f"missing expected report/presentation/viva deliverables: {missing}")
+    for required in REQUIRED_DELIVERABLES:
+        candidates = [name for name in files if PurePosixPath(name).name.lower() == required]
+        if len(candidates) != 1:
+            fail(f"expected exactly one {required}; found {candidates}")
 
     pdf_names = [name for name in files if PurePosixPath(name).suffix.lower() == ".pdf"]
     docx_names = [name for name in files if PurePosixPath(name).suffix.lower() == ".docx"]
@@ -156,15 +156,40 @@ def main() -> None:
         for name in names:
             safe_name(name)
         source_members = [name for name in names if name == "src/engine.c" or name.endswith("/src/engine.c")]
-        if len(source_members) != 1:
-            fail(f"expected one existing src/engine.c to establish package root; found {source_members}")
-        engine_suffix = "src/engine.c"
-        prefix = source_members[0][:-len(engine_suffix)]
+        if len(source_members) == 1:
+            prefix = source_members[0][:-len("src/engine.c")]
+        elif len(source_members) > 1:
+            fail(f"multiple existing src/engine.c files make the package root ambiguous: {source_members}")
+        else:
+            # Older ZIPs may contain only the report assets. Infer the shared project
+            # folder from the six required deliverables, then add the missing source tree.
+            deliverable_paths = {}
+            for required in REQUIRED_DELIVERABLES:
+                candidates = [name for name in names if PurePosixPath(name).name.lower() == required]
+                if len(candidates) != 1:
+                    fail(f"cannot establish package root: expected exactly one {required}; found {candidates}")
+                deliverable_paths[required] = candidates[0]
+            parent_parts = [PurePosixPath(name).parent.parts for name in deliverable_paths.values()]
+            common_parts = []
+            for components in zip(*parent_parts):
+                if len(set(components)) != 1:
+                    break
+                common_parts.append(components[0])
+            prefix = "/".join(common_parts)
+            if prefix:
+                prefix += "/"
+            print("Existing ZIP had no C11 source tree; adding repository files at package prefix " + repr(prefix))
+
         existing = {}
+        removed_stale_language_files = 0
         for info in infos:
             key = info.filename.rstrip("/")
             if key in existing:
                 fail(f"duplicate archive path before refresh: {key}")
+            # The submitted project is C11; discard stale Java build/source artifacts.
+            if PurePosixPath(key).suffix.lower() in {".java", ".class"}:
+                removed_stale_language_files += 1
+                continue
             existing[key] = (info, source.read(info))
 
     refresh_count = 0
@@ -197,7 +222,7 @@ def main() -> None:
         if temporary_path.exists():
             temporary_path.unlink(missing_ok=True)
 
-    print(f"Refreshed submission archive: {refresh_count} files updated, {add_count} files added.")
+    print(f"Refreshed submission archive: {refresh_count} files updated, {add_count} files added, {removed_stale_language_files} stale Java artifacts removed.")
     print(f"Archive size: {ARCHIVE.stat().st_size} bytes")
     # Verify the exact on-disk archive after replacing the original.
     verify_archive(ARCHIVE, prefix, paths)
