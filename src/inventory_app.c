@@ -323,9 +323,12 @@ static int copy_file(const char *from, const char *to) {
 static bool save_inventory(void) {
     FILE *f;
     size_t i;
+    int backup_result;
     f = fopen(INVENTORY_TEMP, "w");
     if (!f) { perror("Cannot write inventory file"); return false; }
-    if (fprintf(f, "batch_id,item,quantity,received_date,expiry_date,status\n") < 0) { (void)fclose(f); return false; }
+    if (fprintf(f, "batch_id,item,quantity,received_date,expiry_date,status\n") < 0) {
+        (void)fclose(f); (void)remove(INVENTORY_TEMP); return false;
+    }
     for (i = 0U; i < g_batch_count; ++i) {
         char received[11], expiry[11], qty[32];
         FoodBatch *b = &g_batches[i];
@@ -338,16 +341,30 @@ static bool save_inventory(void) {
             (void)fclose(f); (void)remove(INVENTORY_TEMP); return false;
         }
     }
-    if (ferror(f) || fclose(f) != 0) { (void)remove(INVENTORY_TEMP); return false; }
     {
-        int backup_result = copy_file(INVENTORY_FILE, INVENTORY_BACKUP);
-        if (backup_result < 0) { fprintf(stderr, "Warning: could not refresh backup '%s'.\n", INVENTORY_BACKUP); }
+        int write_failed = ferror(f) ? 1 : 0;
+        int close_failed = fclose(f) != 0 ? 1 : 0;
+        if (write_failed || close_failed) { (void)remove(INVENTORY_TEMP); return false; }
+    }
+    backup_result = copy_file(INVENTORY_FILE, INVENTORY_BACKUP);
+    if (backup_result < 0) {
+        fprintf(stderr, "Warning: could not refresh backup '%s'.\n", INVENTORY_BACKUP);
     }
 #ifdef _WIN32
-    (void)remove(INVENTORY_FILE);
+    /* Never remove the last persisted copy unless a backup was made successfully. */
+    if (backup_result == 1 && remove(INVENTORY_FILE) != 0) {
+        perror("Cannot replace inventory file"); (void)remove(INVENTORY_TEMP); return false;
+    }
 #endif
     if (rename(INVENTORY_TEMP, INVENTORY_FILE) != 0) {
-        perror("Cannot replace inventory file"); return false;
+        perror("Cannot replace inventory file");
+#ifdef _WIN32
+        if (backup_result == 1 && copy_file(INVENTORY_BACKUP, INVENTORY_FILE) != 1) {
+            fprintf(stderr, "Critical warning: inventory replacement failed and backup restoration also failed. Preserve '%s'.\n", INVENTORY_BACKUP);
+        }
+#endif
+        (void)remove(INVENTORY_TEMP);
+        return false;
     }
     return true;
 }
@@ -636,6 +653,7 @@ static void issue_stock(void) {
     int request, policy_choice;
     size_t i, candidate_count = 0U;
     FoodBatch *candidates[APP_MAX_BATCHES];
+    FoodBatch *snapshot = NULL;
     Inventory inv = {0};
     AllocationResult result = {0};
     PolicyKind policy;
@@ -665,32 +683,56 @@ static void issue_stock(void) {
             printf("Could not build allocator: %s\n", fefo_status_string(status)); inventory_destroy(&inv); return;
         }
     }
+    if (candidate_count > SIZE_MAX / sizeof(*snapshot)) {
+        puts("Unable to safely snapshot inventory before issuing stock.");
+        inventory_destroy(&inv); return;
+    }
+    snapshot = malloc(candidate_count * sizeof(*snapshot));
+    if (!snapshot) {
+        puts("Unable to allocate a rollback snapshot; no stock was issued.");
+        inventory_destroy(&inv); return;
+    }
+    for (i = 0U; i < candidate_count; ++i) snapshot[i] = *candidates[i];
+
     status = inventory_allocate(&inv, request, g_today, &result);
     if (status != FEFO_OK) {
-        printf("Allocation failed: %s\n", fefo_status_string(status)); inventory_destroy(&inv); allocation_result_destroy(&result); return;
+        for (i = 0U; i < candidate_count; ++i) *candidates[i] = snapshot[i];
+        free(snapshot);
+        printf("Allocation failed: %s\n", fefo_status_string(status));
+        inventory_destroy(&inv); allocation_result_destroy(&result); return;
     }
     printf("\nPolicy: %s\nRequested: %d | Fulfilled: %d | Shortfall: %d\n", policy_name(policy), result.requested, result.fulfilled, result.shortfall);
     if (result.line_count > 0U) {
         puts("Allocated from:");
-        for (i = 0U; i < result.line_count; ++i) {
-            size_t j;
+        for (i = 0U; i < result.line_count; ++i)
             printf("  %-18s %d unit(s)\n", result.lines[i].batch_id, result.lines[i].quantity);
-            for (j = 0U; j < g_batch_count; ++j) if (strcmp(g_batches[j].id, result.lines[i].batch_id) == 0) {
-                (void)snprintf(detail, sizeof(detail), "Policy=%s; request=%d; fulfilled=%d; shortfall=%d", policy_name(policy), request, result.fulfilled, result.shortfall);
-                if (!append_transaction(policy == POLICY_HEAP_FEFO ? "ISSUE_FEFO" : "ISSUE_FIFO", g_batches[j].item, g_batches[j].id, result.lines[i].quantity, detail))
-                    fprintf(stderr, "Warning: could not log issue from %s.\n", g_batches[j].id);
-                break;
-            }
+    }
+
+    /* Persist stock before writing audit events: a failed stock save must not leave false issue records. */
+    if (!save_inventory()) {
+        for (i = 0U; i < candidate_count; ++i) *candidates[i] = snapshot[i];
+        free(snapshot);
+        puts("ERROR: inventory save failed; the issue was rolled back in memory and no issue events were logged.");
+        inventory_destroy(&inv); allocation_result_destroy(&result); return;
+    }
+
+    for (i = 0U; i < result.line_count; ++i) {
+        size_t j;
+        for (j = 0U; j < g_batch_count; ++j) if (strcmp(g_batches[j].id, result.lines[i].batch_id) == 0) {
+            (void)snprintf(detail, sizeof(detail), "Policy=%s; request=%d; fulfilled=%d; shortfall=%d", policy_name(policy), request, result.fulfilled, result.shortfall);
+            if (!append_transaction(policy == POLICY_HEAP_FEFO ? "ISSUE_FEFO" : "ISSUE_FIFO", g_batches[j].item, g_batches[j].id, result.lines[i].quantity, detail))
+                fprintf(stderr, "Warning: stock was saved but issue audit log append failed for %s.\n", g_batches[j].id);
+            break;
         }
     }
     if (result.shortfall > 0) {
         printf("Shortfall recorded: %d unit(s) could not be issued.\n", result.shortfall);
-        if (!append_transaction("SHORTFALL", item, "", result.shortfall, "Request exceeded eligible stock")) puts("Warning: shortfall transaction could not be logged.");
+        if (!append_transaction("SHORTFALL", item, "", result.shortfall, "Request exceeded eligible stock"))
+            puts("Warning: stock was saved, but shortfall transaction could not be logged.");
     }
-    if (!save_inventory()) puts("ERROR: current inventory changes could not be saved; check file permissions and backup before exiting.");
+    free(snapshot);
     inventory_destroy(&inv); allocation_result_destroy(&result);
 }
-
 static void expiry_report(void) {
     int days_ahead;
     size_t i, expired_count = 0U, soon_count = 0U;
@@ -771,7 +813,7 @@ static void import_stock_csv(void) {
     char path[APP_LINE_CAP];
     FILE *f;
     char fields[CSV_MAX_FIELDS][CSV_FIELD_CAP];
-    size_t field_count = 0U, line_no = 1U, imported = 0U, skipped = 0U;
+    size_t field_count = 0U, line_no = 1U, imported = 0U, skipped = 0U, start_count = g_batch_count, i;
     int row;
     puts("CSV format: batch_id,item,quantity,received_date,expiry_date");
     puts("Dates must be YYYY-MM-DD. Existing batch IDs are not overwritten.");
@@ -785,22 +827,28 @@ static void import_stock_csv(void) {
     }
     while ((row = csv_read_row(f, fields, &field_count)) != 0) {
         int qty, received, expiry;
-        size_t idx;
         if (row < 0 || field_count != 5U || !fields[0][0] || !fields[1][0] || !parse_int_strict(fields[2], &qty) || qty < 1 ||
             !parse_date(fields[3], &received) || !parse_date(fields[4], &expiry) || expiry < received || expiry < g_today ||
             strlen(fields[0]) >= FEFO_BATCH_ID_CAP || strlen(fields[1]) >= FEFO_ITEM_NAME_CAP || g_batch_count >= APP_MAX_BATCHES || id_exists(fields[0])) {
             printf("Skipped invalid row near line %lu.\n", (unsigned long)(line_no + 1U)); ++skipped; ++line_no; continue;
         }
-        if (!add_to_memory(fields[0], fields[1], qty, received, expiry, false, &idx)) { ++skipped; ++line_no; continue; }
-        if (!append_transaction("IMPORT", fields[1], fields[0], qty, "Imported from CSV")) fprintf(stderr, "Warning: could not log import of %s.\n", fields[0]);
+        if (!add_to_memory(fields[0], fields[1], qty, received, expiry, false, NULL)) { ++skipped; ++line_no; continue; }
         ++imported; ++line_no;
     }
     if (ferror(f)) puts("Warning: an input read error occurred.");
     (void)fclose(f);
-    if (imported > 0U && !save_inventory()) puts("ERROR: imported records are in memory but could not be saved; verify the data folder before exiting.");
+    if (imported > 0U && !save_inventory()) {
+        g_batch_count = start_count;
+        imported = 0U;
+        puts("ERROR: imported stock could not be saved; all imported records were rolled back in memory and no import events were logged.");
+    } else {
+        for (i = start_count; i < g_batch_count; ++i) {
+            if (!append_transaction("IMPORT", g_batches[i].item, g_batches[i].id, g_batches[i].quantity, "Imported from CSV"))
+                fprintf(stderr, "Warning: stock was saved but import audit log append failed for %s.\n", g_batches[i].id);
+        }
+    }
     printf("Import complete: %lu added, %lu skipped.\n", (unsigned long)imported, (unsigned long)skipped);
 }
-
 static void change_low_stock_threshold(void) {
     int old_value = g_low_stock_threshold, new_value;
     if (!ask_int("Low-stock threshold in units per item (0 disables alerts): ", 0, 1000000, &new_value)) return;
