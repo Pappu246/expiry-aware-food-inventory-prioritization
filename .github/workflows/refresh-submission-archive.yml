@@ -1,0 +1,43 @@
+name: Refresh and verify submission archive
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - "audit/**"
+      - c11-clean-main-2026-10-11
+      - c11-full-inventory-app-2026-10-11
+    paths-ignore:
+      - "submission/A6_Submission_Artifacts.zip"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: submission-archive-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  refresh-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out selected branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Refresh current source and documentation; validate the ZIP
+        run: python3 scripts/refresh_submission_archive.py
+      - name: Commit refreshed archive if it changed
+        shell: bash
+        run: |
+          if git diff --quiet -- submission/A6_Submission_Artifacts.zip; then
+            echo "Submission archive already matches the checked-out tracked sources."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add submission/A6_Submission_Artifacts.zip
+            git commit -m "chore: refresh submission archive from current source"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi

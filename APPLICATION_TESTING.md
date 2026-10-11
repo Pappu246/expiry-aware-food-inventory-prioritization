@@ -17,10 +17,11 @@
 Run `make app-smoke` to reproduce the following checks using an isolated temporary data directory:
 
 1. Manual stock entry for two different items; issue for Rice does not consume Beans.
-2. FEFO allocates from the earliest-expiring batch first, reports shortfall honestly, and persists the updated quantities after restart.
-3. Transaction log and stock-report CSV are created.
-4. CSV bulk import accepts a quoted item name containing a comma and skips a batch whose expiry date has already passed.
-5. An ACTIVE saved batch past its date becomes EXPIRED at startup and is written to the log; a batch expiring today remains eligible under the project's declared boundary rule.
+2. FEFO allocation selects the earliest eligible expiry, reports shortfalls honestly, and persists quantities across restart.
+3. Transaction history and stock-report CSV are created.
+4. CSV import accepts a quoted item name containing a comma and rejects invalid or past-expiry stock.
+5. Expiry status uses the documented boundary: stock remains eligible on its expiry date and expires the following day; input dates are strict and future receipt dates are rejected.
+6. Corrupt inventory files are not partially loaded and overwritten, and a missing primary file is not recreated empty when a recovery backup exists.
 
 The black-box script now contains six grouped scenarios, including strict date validation, backup preservation, and missing-primary-file recovery. These tests use test-only records and isolated directories; they do not modify real user stock.
 

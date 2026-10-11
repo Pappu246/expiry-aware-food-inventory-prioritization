@@ -1,64 +1,47 @@
 # A-6 Project Submission Package
 
 **Project:** Expiry-Aware Food Inventory Prioritization Engine Using Data Structures  
-**Language:** C11  
-**Repository:** https://github.com/Pappu246/expiry-aware-food-inventory-prioritization  
-**Audited branch:** `audit/benchmark-correctness`  
-**Verified source commit:** `7448b507d72837ecd6cbad44ad703bad9715be57`  
-**Latest CI run:** https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38035688983
+**Language:** C11 for the DSA engine; separate local-first Node.js website  
+**Canonical repository:** https://github.com/Pappu246/expiry-aware-food-inventory-prioritization  
+**Canonical branch:** `main`
 
-## Added practical local inventory mode (2026-10-10)
+This package is refreshed from the selected Git branch by the [submission archive workflow](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/workflows/refresh-submission-archive.yml). The C source, website source, tests, build scripts, CSVs and Markdown guides are synchronized with the repository files; the curated report, slide and viva documents are preserved inside the ZIP and structurally checked.
 
-This updated bundle adds `src/inventory_app.c` and `START_INVENTORY_APP.bat`. The interactive app accepts manual or CSV-imported stock batches, separates issue allocations by item name, uses the FEFO engine to allocate requested quantities, reports shortfalls and expiry/low-stock alerts, and saves local inventory plus a transaction log. See `PRACTICAL_APP_GUIDE.md`. The added app passed local GCC build, Clang static analysis and black-box app smoke tests; the pre-existing GitHub CI run documented above was for the original benchmark harness and did not execute this later extension.
+## Deliverables
 
-## Added browser-based website (2026-10-11)
+- `A6_Project_Report.docx` and `A6_Project_Report.pdf` — report with abstract, background/literature context, method, measured results, limitations, references and appendices.
+- `A6_Project_Presentation.pptx` and `A6_Project_Presentation.pdf` — presentation for the project review.
+- `A6_Viva_Notes.docx` and `A6_Viva_Notes.pdf` — viva preparation.
+- `A6_Rubric_Alignment.md`, `CI_VERIFICATION.md`, `START_HERE.md`, `DEMO_GUIDE.md`, source code, tests, build scripts, website guides and benchmark protocol.
+- Data files: smoke simulation, raw FEFO/FIFO policy matrix, summary matrix, structure benchmark, benchmark summary and separate operation-count CSVs.
+- Figures and the supplied VGU A-6 notice/rubric PDF are preserved from the curated package.
 
-This package now also includes a browser-based version in `website/`, without replacing or altering the C11 program, Min-Heap/Hash Table engine, benchmark files, reports, presentation or original viva notes. It has a dashboard, manual batch form, searchable inventory, FEFO and FIFO stock issue, expiry alerts, adjustments and write-offs, movement history, CSV import/export, JSON backup/restore and reporting. The FEFO allocator uses a Min-Heap; the FIFO comparison is ordered by receipt date.
+The archive verifier requires the report, presentation and viva deliverables in their expected file formats, rejects unsafe ZIP paths/corrupt CRCs, and compares the packaged C11 engine, interactive app, website server and test sources against the corresponding files in the selected repository commit.
 
-### Run the website
+## What is implemented
 
-1. Install Node.js 18 or later; no `npm install` is required.
-2. Double-click `START_WEBSITE.bat` at the package root.
-3. Use `http://127.0.0.1:4173` and keep its local server terminal open.
-4. Start with fictional demo data or enter/import actual stock.
+The C11 engine implements a custom binary Min-Heap for FEFO allocation, a hash table for batch ID lookup/duplicate prevention, an independent linear-scan FEFO correctness/performance baseline, and a separate FIFO policy experiment. The practical command-line app supports multiple item names, manual/CSV intake, FEFO/FIFO issue comparisons, expiry and low-stock views, transaction history, CSV export and local persistence.
 
-Website-specific source, tests and instructions are in `website/`; run `npm test` inside that directory to test the website API and allocation rules. The website's JSON file (`website/data/inventory.json`) and the C app's files under root `data/` are separate; they do not sync automatically. The website is local-only and has no login/cloud database. Do not expose it directly to the public internet. The older C app remains the academic experiment reference and retains the original benchmark evidence.
+The optional website is a separate local-first Node.js application. It offers a dashboard, manual batch entry, search, FEFO/FIFO issue, expiry alerts, adjustments/write-offs, movement history, CSV import/export, JSON backup/restore and reporting. It currently uses a sort-based allocator rather than the C engine's Min-Heap. Website data under `website/data/` and C app data under `data/` are separate and do not synchronize.
 
-### Run the practical app
+## Run on Windows
 
-1. Extract the ZIP fully into a writable folder.
-2. Double-click `START_INVENTORY_APP.bat`.
-3. Add stock with menu option `1`, view it with `2`, issue using FEFO with `4`, check expiry alerts with `5`, then exit with `0`.
-4. Local application data is stored in `data\`; synthetic experiment outputs are stored separately in `results\generated\`.
+1. Extract the ZIP completely into a writable folder; do not run from the ZIP preview.
+2. Install GCC with C11 support and Python 3 for the C app smoke test.
+3. Double-click `START_INVENTORY_APP.bat` for the C11 console application or `START_WEBSITE.bat` for the local website.
+4. For the website, keep the server terminal open and use `http://127.0.0.1:4173`.
+5. For coursework demonstrations, `RUN_QUICK_DEMO.bat` runs the short research-demo flow and `RUN_FULL_DEMO.bat` runs the synthetic benchmark/policy experiments.
 
-## Included files
+Node.js 18 or later is required for the website; no third-party runtime packages are required. The local website is not an authenticated cloud service and must not be exposed directly to the public internet.
 
-- `A6_Project_Report.docx` and `.pdf` — full report with declaration, acknowledgement, abstract, focused literature review/research gap, method, results, limitations, references and appendices.
-- `A6_Project_Presentation.pptx` and `.pdf` — 14 slides with problem, literature review, method, measured results, limitations, references and acknowledgement.
-- `A6_Viva_Notes.docx` and `.pdf` — viva preparation, including live demonstration and FIFO-complexity answers.
-- `A6_Rubric_Alignment.md`, `CI_VERIFICATION.md`, `START_HERE.md`, `DEMO_GUIDE.md`.
-- **Runnable source tree:** `src/` (including the interactive inventory app), `website/` (browser app, API, tests and guides), `include/`, `tests/`, `templates/`, `.github/workflows/ci.yml`, `Makefile`, `build.ps1`, `demo.ps1`, the Windows launchers, `README.md`, `PRACTICAL_APP_GUIDE.md`, `PROJECT_SPEC.md`, and `BENCHMARK_PROTOCOL.md`.
-- Six CSVs: smoke simulation, 180-row raw policy matrix, 18-row summary, 70-row benchmark, five-row benchmark summary and ten-row operation-count data.
-- Figures: benchmark, policy experiment, operation counts, smoke simulation and system architecture.
-- Supplied VGU A-6 notice/rubric PDF.
+## Tests and evidence
 
-## Verified checks
+The current [C11 CI workflow history](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/workflows/ci.yml) is the source of truth for the exact commit tested. The workflow compiles C11 with strict warnings, runs engine and allocation-failure tests, checks the interactive-app and showcase behavior, runs ASan/UBSan, and executes the website's Node.js tests. The website tests include validation, FEFO/FIFO ordering, concurrency, backup recovery, CSV behavior, API integration and process-restart persistence.
 
-- GCC 13.3.0 / Ubuntu 24.04; C11 warnings as errors with `-O2`.
-- Regular tests: **13/13 PASS**; allocation-failure injection: **14/14 PASS**.
-- Clang static analysis/build/regression, PowerShell script syntax, ASan/UBSan, demo, 100-batch smoke run, policy matrix, benchmark, separate operation counters and artifact uploads: **PASS**.
-- Local GCC 14.2 checks repeated: build, regular/sanitizer/fault-injection tests, demo, smoke, full experiment, benchmark, counters and Clang static analysis passed.
-- Latest CI artifacts: generated CSVs `11664281424` and runnable source `11663701726`, retained until 9 November 2026.
+A previous deep-audit snapshot passed engine **13/13**, allocation-failure **14/14**, app smoke **6/6 grouped scenarios**, showcase **4/4**, sanitizer **13/13**, and website **28/28** tests. A subsequent regression now covers recovery when the website primary inventory file is missing but an automatic snapshot exists; consult the latest workflow run for the updated count.
 
-## Classroom demo
+Older package notes referenced a different branch, commit and test matrix. They are not the current source of truth. Current workflow history supersedes those snapshots. The active C11 CI workflow is Linux/Ubuntu-based and does not run Clang/PowerShell or a Node.js version matrix on each push.
 
-1. Extract this ZIP and open its root folder in VS Code.
-2. Open a PowerShell terminal at that folder and run `.\demo.ps1 -Quick`.
-3. Show `src/engine.c`, the console FEFO allocations, the FEFO/FIFO simulation table and `results/generated/policy_simulation.csv`.
-4. Use `.\demo.ps1` for the full benchmark and result generation.
+## Limits
 
-The Windows scripts passed PowerShell parser validation in CI; rehearse the command once on your laptop before class. A C compiler is required. The original C module remains a C11 command-line prototype; the package now also contains a separate local-first website in `website/`.
-
-## Limits and release state
-
-All results use synthetic data; performance ratios belong to the CI runner/workload. The application does not evaluate physical food safety or establish real-world food-waste savings. The audit branch is intentionally isolated; no merge into `dev` or `main` was made. No separate report template was specified beyond the supplied notice.
+Benchmark inputs and policy outcomes are synthetic. Reported selection speedups apply to the specified workload and CI runner only. The prototype does not prove real-world food-waste reduction, certify food safety, or track storage temperature, allergens or recalls. Use consistent units and actual package dates, follow local procedures, and keep independent backups of real inventory data.

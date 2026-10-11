@@ -12,8 +12,8 @@ let child;
 let baseUrl;
 let tempDir;
 
-async function startServer() {
-  tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'freshtrack-test-'));
+async function startServer(existingTempDir) {
+  tempDir = existingTempDir || await fs.mkdtemp(path.join(os.tmpdir(), 'freshtrack-test-'));
   child = spawn(process.execPath, ['server.js'], {
     cwd: path.resolve(__dirname, '..'),
     env: { ...process.env, HOST: '127.0.0.1', PORT: '0', FRESHTRACK_DATA_DIR: tempDir },
@@ -285,4 +285,64 @@ test('local inventory server refuses non-loopback network binding', async (t) =>
   assert.notEqual(exitCode, 0, 'a public-interface bind must fail closed');
   assert.match(output, /Refusing to bind to non-loopback host: 0\.0\.0\.0/);
   assert.equal(await fs.access(path.join(dir, 'inventory.json')).then(() => true, () => false), false, 'rejected startup must not create an inventory database');
+});
+
+
+test('missing primary inventory preserves and can restore an existing automatic backup', async (t) => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'freshtrack-missing-primary-'));
+  const now = new Date().toISOString();
+  const today = todayISO();
+  const backup = {
+    version: 1,
+    settings: { alertDays: 7 },
+    batches: [{
+      id: 'recovery-batch-001',
+      batchCode: 'RECOVERY-RICE-001',
+      itemName: 'Rice',
+      category: 'Grains',
+      quantity: 12,
+      unit: 'kg',
+      receivedDate: today,
+      expiryDate: addDaysISO(today, 30),
+      supplier: 'Recovery test',
+      costPerUnit: 25,
+      notes: 'must survive missing-primary recovery',
+      archived: false,
+      createdAt: now,
+      updatedAt: now,
+    }],
+    movements: [],
+    createdAt: now,
+    updatedAt: now,
+    backupFormat: 'freshtrack-backup-v1',
+    exportedAt: now,
+  };
+  await fs.writeFile(path.join(dir, 'inventory.json.bak'), JSON.stringify(backup, null, 2) + '\n', 'utf8');
+  await startServer(dir);
+  t.after(async () => {
+    if (child && child.exitCode === null) {
+      const running = child;
+      running.kill('SIGTERM');
+      await new Promise((resolve) => running.once('exit', resolve));
+    }
+    await fs.rm(dir, { recursive: true, force: true });
+  });
+
+  assert.equal((await request('/api/health')).status, 200, 'the local server must stay available for recovery');
+  const missingState = await request('/api/state');
+  assert.equal(missingState.status, 409, 'missing primary plus available backup must fail closed');
+  assert.match(missingState.payload.error, /automatic recovery snapshot exists/i);
+  assert.equal(await fs.access(path.join(dir, 'inventory.json')).then(() => true, () => false), false, 'the server must not create an empty primary over the recoverable state');
+
+  const previous = await request('/api/backup/previous');
+  assert.equal(previous.status, 200);
+  assert.equal(previous.payload.backupFormat, 'freshtrack-backup-v1');
+  assert.equal(previous.payload.batches[0].batchCode, 'RECOVERY-RICE-001');
+
+  const restored = await request('/api/restore', 'POST', previous.payload);
+  assert.equal(restored.status, 200, 'the automatic snapshot must be restorable without a primary file');
+  const recoveredState = await request('/api/state');
+  assert.equal(recoveredState.status, 200);
+  assert.equal(recoveredState.payload.batches[0].quantity, 12);
+  assert.equal(recoveredState.payload.batches[0].batchCode, 'RECOVERY-RICE-001');
 });

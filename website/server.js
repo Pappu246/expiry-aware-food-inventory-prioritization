@@ -23,15 +23,47 @@ function initialDb() {
   return { version: 1, settings: { alertDays: 7 }, batches: [], movements: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
 }
 
+async function fileExists(filePath) {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch (error) {
+    if (error.code === 'ENOENT') return false;
+    throw error;
+  }
+}
+
 async function ensureDb() {
   await fs.mkdir(DATA_DIR, { recursive: true });
-  try { await fs.access(DB_FILE); }
-  catch { await fs.writeFile(DB_FILE, JSON.stringify(initialDb(), null, 2) + '\n', 'utf8'); }
+  if (await fileExists(DB_FILE)) return;
+
+  // Do not silently initialize an empty inventory while a recoverable snapshot exists.
+  // Keep the server available so the user can download or restore that snapshot.
+  if (await fileExists(PREVIOUS_BACKUP_FILE)) return;
+
+  try {
+    await fs.writeFile(DB_FILE, JSON.stringify(initialDb(), null, 2) + '\n', { encoding: 'utf8', flag: 'wx' });
+  } catch (error) {
+    // Another local startup may have initialized the file between the check and create.
+    if (error.code !== 'EEXIST') throw error;
+  }
 }
 
 async function readDb() {
   await ensureDb();
-  const parsed = JSON.parse(await fs.readFile(DB_FILE, 'utf8'));
+  let raw;
+  try {
+    raw = await fs.readFile(DB_FILE, 'utf8');
+  } catch (error) {
+    if (error.code === 'ENOENT' && await fileExists(PREVIOUS_BACKUP_FILE)) {
+      throw Object.assign(
+        new Error('The current inventory file is missing, but an automatic recovery snapshot exists. Use Settings & backup to restore the previous snapshot before continuing.'),
+        { status: 409 },
+      );
+    }
+    throw error;
+  }
+  const parsed = JSON.parse(raw);
   if (!isValidStoredDatabase(parsed)) throw new Error('Inventory database is invalid or inconsistent. Restore a valid JSON backup or the previous automatic snapshot.');
   return parsed;
 }
