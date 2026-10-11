@@ -22,6 +22,8 @@ jobs:
         run: make test-allocation-failure
       - name: Inventory app smoke tests
         run: make app-smoke
+      - name: Showcase contract and browser script syntax
+        run: node --test tests/showcase.contract.test.js
       - name: Sanitizer tests
         run: make test-sanitize
       - name: Website tests
