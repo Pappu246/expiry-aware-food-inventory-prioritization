@@ -45,7 +45,7 @@ test('showcase uses live calendar dates and never allocates expired demo stock',
   const makeElement = (value = '') => ({ value, innerHTML: '', handlers: {}, addEventListener(name, handler) { this.handlers[name] = handler; } });
   const elements = {
     item: makeElement('Rice'),
-    quantity: makeElement('15'),
+    quantity: makeElement('20'),
     batchRows: makeElement(),
     result: makeElement(),
     runDemo: makeElement(),
