@@ -483,6 +483,18 @@ static void load_inventory(void) {
     int row_result;
     if (!f) {
         if (errno == ENOENT) {
+            FILE *backup = fopen(INVENTORY_BACKUP, "r");
+            if (backup) {
+                if (fclose(backup) != 0) perror("Cannot inspect existing inventory backup");
+                fprintf(stderr, "ERROR: inventory.csv is missing but inventory_backup.csv exists; refusing to initialize an empty inventory. Restore a known-good backup first.\n");
+                g_inventory_load_failed = true;
+                return;
+            }
+            if (errno != ENOENT) {
+                perror("Cannot inspect inventory backup");
+                g_inventory_load_failed = true;
+                return;
+            }
             if (!save_inventory()) {
                 fprintf(stderr, "Warning: unable to initialise inventory storage.\n");
                 g_inventory_load_failed = true;

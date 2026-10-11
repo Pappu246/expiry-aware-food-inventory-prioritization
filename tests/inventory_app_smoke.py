@@ -152,6 +152,34 @@ def main() -> int:
             raise AssertionError("app overwrote the known-good previous inventory backup")
         print("PASS: malformed inventory fails closed without overwriting current or backup data")
 
+    with tempfile.TemporaryDirectory(prefix="a6-inventory-missing-current-") as temp:
+        root = pathlib.Path(temp)
+        data_dir = root / "data"
+        data_dir.mkdir()
+        inventory_path = data_dir / "inventory.csv"
+        backup_path = data_dir / "inventory_backup.csv"
+        today = dt.date.today()
+        expiry = (today + dt.timedelta(days=15)).isoformat()
+        known_good_backup = (
+            "batch_id,item,quantity,received_date,expiry_date,status\n"
+            f"BACKUP-1,Oats,9,{today.isoformat()},{expiry},ACTIVE\n"
+        ).encode("utf-8")
+        backup_path.write_bytes(known_good_backup)
+        proc = subprocess.run(
+            [str(exe)], cwd=root, input="0\n", text=True,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=20,
+        )
+        if proc.returncode == 0:
+            raise AssertionError("app must not initialize empty stock when the saved inventory is missing but a backup exists")
+        if "refusing to initialize an empty inventory" not in proc.stdout:
+            raise AssertionError(f"missing-file recovery warning was missing\n{proc.stdout[-3000:]}")
+        if inventory_path.exists():
+            raise AssertionError("app created an empty primary inventory despite finding a previous backup")
+        if backup_path.read_bytes() != known_good_backup:
+            raise AssertionError("app altered the existing recovery backup")
+
+    print("PASS: missing primary inventory with an existing backup fails closed")
+
     return 0
 
 
