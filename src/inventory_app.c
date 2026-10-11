@@ -790,7 +790,9 @@ static void export_stock_report(void) {
     FILE *f = fopen(STOCK_REPORT_FILE, "w");
     size_t i;
     if (!f) { perror("Could not create stock report"); return; }
-    fputs("batch_id,item,quantity,received_date,expiry_date,status,days_until_expiry,available_quantity\n", f);
+    if (fputs("batch_id,item,quantity,received_date,expiry_date,status,days_until_expiry,available_quantity\n", f) == EOF) {
+        (void)fclose(f); puts("Report write failed."); return;
+    }
     for (i = 0U; i < g_batch_count; ++i) {
         FoodBatch *b = &g_batches[i];
         char received[11], expiry[11], quantity[32], days[32], available[32];
@@ -805,7 +807,11 @@ static void export_stock_report(void) {
             (void)fclose(f); puts("Report write failed."); return;
         }
     }
-    if (ferror(f) || fclose(f) != 0) { puts("Report write failed."); return; }
+    {
+        int write_failed = ferror(f) ? 1 : 0;
+        int close_failed = fclose(f) != 0 ? 1 : 0;
+        if (write_failed || close_failed) { puts("Report write failed."); return; }
+    }
     printf("Stock report exported to %s\n", STOCK_REPORT_FILE);
 }
 
