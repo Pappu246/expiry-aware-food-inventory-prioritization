@@ -97,7 +97,7 @@ A6_FreshTrack_Website/
 
 ## Technology stack
 
-HTML5, CSS3, vanilla JavaScript, Node.js built-in `http`, and JSON-file storage. The website allocator builds a **Min-Heap** using expiry/received-date/batch-code priority for FEFO, and orders FIFO candidates by received-date/expiry/batch-code. The original C prototype separately demonstrates its Min-Heap, Hash Table and benchmark experiments.
+HTML5, CSS3, vanilla JavaScript, Node.js built-in `http`, and JSON-file storage. The website's current allocator filters eligible batches and sorts FEFO candidates by expiry date, received date and batch code; FIFO sorts by received date, expiry date and batch code. The C prototype is the part that implements the custom Min-Heap and Hash Table and produces the structure benchmarks. Website results must not be described as Min-Heap benchmark results.
 
 ## Academic integrity note
 
