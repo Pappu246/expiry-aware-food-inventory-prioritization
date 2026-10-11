@@ -1,0 +1,16 @@
+# Build artefacts
+/build/
+*.o
+*.obj
+*.exe
+*.out
+
+# Local runtime inventory — may contain real stock records
+/data/
+/website/data/inventory.json
+/website/data/*.tmp
+
+# Local tooling
+.DS_Store
+Thumbs.db
+*.log

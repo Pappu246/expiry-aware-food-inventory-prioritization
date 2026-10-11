@@ -1,0 +1,6 @@
+<PARSED TEXT FOR SHEET: 1 / 1 TABS
+TAB NAME: policy_simulation.csv>
+index,policy,seed,batches,horizon_days,demand_ratio,supply,demand,fulfilled,shortfall,expired,expired_batches,remaining,completed_requests,requests,priority_inversions
+0,FEFO_MIN_HEAP,20261009,100,35,0.8,536,429,418,11,15,3,103,34,35,0
+1,FEFO_LINEAR_SCAN,20261009,100,35,0.8,536,429,418,11,15,3,103,34,35,0
+2,FIFO,20261009,100,35,0.8,536,429,418,11,52,13,66,34,35,31

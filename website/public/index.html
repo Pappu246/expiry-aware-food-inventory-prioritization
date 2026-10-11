@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#142a24">
+  <meta name="description" content="Expiry-aware food inventory management with FEFO/FIFO stock issue, alerts and CSV reporting.">
+  <title>FreshTrack — Food Inventory</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#overview" data-page="overview" aria-label="FreshTrack overview">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M20 32c-8-3-12-9-11-18 9 0 15 4 17 11"/><path d="M17 27C16 17 22 10 32 8c2 10-3 18-13 22"/><path d="M10 30c4-6 10-11 18-16"/></svg></span>
+        <span class="brand-copy"><strong>FreshTrack</strong><small>INVENTORY CONTROL</small></span>
+      </a>
+      <div class="workspace-label">WORKSPACE</div>
+      <nav class="side-nav" aria-label="Main navigation">
+        <button class="nav-link active" data-page="overview"><span class="nav-icon">▦</span> Overview</button>
+        <button class="nav-link" data-page="inventory"><span class="nav-icon">▤</span> Inventory <span class="nav-count" id="navBatchCount">0</span></button>
+        <button class="nav-link" data-page="issue"><span class="nav-icon">↗</span> Issue stock</button>
+        <button class="nav-link" data-page="movements"><span class="nav-icon">↻</span> Movements</button>
+        <button class="nav-link" data-page="reports"><span class="nav-icon">▥</span> Reports</button>
+      </nav>
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-tip">
+        <div class="tip-icon">✳</div>
+        <strong>Waste less. Plan better.</strong>
+        <p>Use earliest-expiry stock first to help reduce avoidable food waste.</p>
+      </div>
+      <button class="nav-link settings-link" data-page="settings"><span class="nav-icon">⚙</span> Settings & backup</button>
+      <div class="sidebar-footer"><span class="online-dot"></span> Local workspace <span class="version-tag">v1.0</span></div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileMenu" aria-label="Open navigation">☰</button>
+        <div class="breadcrumb"><span>Workspace</span><span class="crumb-slash">/</span><strong id="currentPageTitle">Overview</strong></div>
+        <div class="topbar-actions">
+          <div class="today-pill"><span class="calendar-icon">▦</span><span id="todayLabel">Today</span></div>
+          <button class="button button-primary button-small" id="topAddBatch"><span>＋</span> Add batch</button>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <section class="page-view active" id="page-overview">
+          <div class="page-heading overview-heading">
+            <div><p class="eyebrow">INVENTORY AT A GLANCE</p><h1>Good to see you <span class="wave">✦</span></h1><p class="subheading">Here's what's happening with your food stock today.</p></div>
+            <div class="heading-actions"><button class="button button-secondary" id="loadDemo"><span>✧</span> Try demo data</button><button class="button button-primary" data-page="inventory"><span>＋</span> Manage inventory</button></div>
+          </div>
+          <div class="metric-grid" id="metricGrid">
+            <div class="metric-card skeleton"></div><div class="metric-card skeleton"></div><div class="metric-card skeleton"></div><div class="metric-card skeleton"></div>
+          </div>
+          <div class="overview-grid">
+            <section class="panel alerts-panel">
+              <div class="panel-heading"><div><h2>Needs your attention</h2><p>Prioritise stock that is expiring or already expired.</p></div><button class="text-button" data-page="inventory">View inventory <span>→</span></button></div>
+              <div id="alertsList" class="alerts-list"><div class="loading-row">Loading stock alerts…</div></div>
+            </section>
+            <section class="panel quick-actions-panel">
+              <div class="panel-heading"><div><h2>Quick actions</h2><p>Common inventory tasks, one click away.</p></div></div>
+              <button class="quick-action" data-open-batch><span class="quick-icon green">＋</span><span><strong>Receive new stock</strong><small>Add a batch with its expiry date</small></span><span class="quick-arrow">↗</span></button>
+              <button class="quick-action" data-page="issue"><span class="quick-icon blue">↗</span><span><strong>Issue / use stock</strong><small>Allocate by FEFO or FIFO</small></span><span class="quick-arrow">↗</span></button>
+              <button class="quick-action" id="quickExport"><span class="quick-icon orange">↓</span><span><strong>Export inventory</strong><small>Download your stock as CSV</small></span><span class="quick-arrow">↗</span></button>
+              <div class="fefo-note"><span>ⓘ</span><p><strong>FEFO tip</strong> — First Expiry, First Out chooses the eligible batch with the nearest expiry date.</p></div>
+            </section>
+          </div>
+          <section class="panel stock-panel">
+            <div class="panel-heading"><div><h2>Expiring soon</h2><p>Closest expiry dates across your active stock.</p></div><button class="text-button" data-page="inventory">See all batches <span>→</span></button></div>
+            <div class="table-wrap"><table><thead><tr><th>ITEM / BATCH</th><th>QUANTITY</th><th>EXPIRY DATE</th><th>SUPPLIER</th><th>STATUS</th></tr></thead><tbody id="expiringTable"><tr><td colspan="5" class="empty-cell">Loading inventory…</td></tr></tbody></table></div>
+          </section>
+          <div class="overview-bottom-grid">
+            <section class="panel category-panel"><div class="panel-heading"><div><h2>Stock by category</h2><p>Current quantity distribution</p></div></div><div id="categoryChart" class="category-chart"></div></section>
+            <section class="panel guide-panel"><div class="guide-illustration" aria-hidden="true"><span>✳</span><div class="guide-leaf leaf-a"></div><div class="guide-leaf leaf-b"></div><div class="guide-pot"></div></div><div><p class="eyebrow">A BETTER ROTATION HABIT</p><h2>Make every batch count.</h2><p>Record expiry dates when stock arrives, issue using FEFO, and review alerts every day.</p><button class="text-button" data-page="reports">Explore your reports <span>→</span></button></div></section>
+          </div>
+        </section>
+
+        <section class="page-view" id="page-inventory">
+          <div class="page-heading"><div><p class="eyebrow">YOUR STOCKROOM</p><h1>Inventory</h1><p class="subheading">Track every batch, expiry date and quantity in one place.</p></div><div class="heading-actions"><label class="button button-secondary file-button" for="csvImport">↑ Import CSV</label><input class="visually-hidden" id="csvImport" type="file" accept=".csv,text/csv"><button class="button button-primary" data-open-batch><span>＋</span> Add batch</button></div></div>
+          <div class="inventory-summary-strip" id="inventorySummaryStrip"></div>
+          <section class="panel inventory-panel">
+            <div class="filter-toolbar"><div class="search-wrap"><span>⌕</span><input type="search" id="inventorySearch" placeholder="Search item, batch or supplier…" aria-label="Search inventory"></div><select id="categoryFilter" aria-label="Filter category"><option value="">All categories</option></select><select id="statusFilter" aria-label="Filter stock status"><option value="">All statuses</option><option value="expired">Expired</option><option value="expiring">Expiring soon</option><option value="available">Available</option><option value="out-of-stock">Out of stock</option></select><button class="icon-button" id="clearFilters" aria-label="Clear inventory filters" title="Clear filters">↺</button></div>
+            <div class="table-wrap"><table class="inventory-table"><thead><tr><th>ITEM DETAILS</th><th>REMAINING</th><th>RECEIVED</th><th>EXPIRY</th><th>SUPPLIER</th><th>STATUS</th><th class="actions-col">ACTIONS</th></tr></thead><tbody id="inventoryTable"></tbody></table></div>
+            <div class="table-footer"><span id="inventoryCount">0 batches</span><span>Expired stock is excluded from FEFO/FIFO issue suggestions.</span></div>
+          </section>
+        </section>
+
+        <section class="page-view" id="page-issue">
+          <div class="page-heading"><div><p class="eyebrow">STOCK ALLOCATION</p><h1>Issue stock</h1><p class="subheading">Record stock used by your kitchen, canteen or store.</p></div></div>
+          <div class="issue-layout">
+            <section class="panel issue-form-panel"><div class="panel-heading"><div><h2>New stock issue</h2><p>Choose an item, quantity and allocation policy.</p></div><span class="round-icon">↗</span></div>
+              <form id="issueForm" class="form-stack">
+                <label class="field-label">Item and unit <span class="required">*</span><select id="issueItem" name="itemKey" required><option value="">No eligible stock available</option></select><small class="field-hint">Only stock that has not expired is listed.</small></label>
+                <div class="field-row"><label class="field-label">Quantity to issue <span class="required">*</span><input id="issueQuantity" name="quantity" type="number" min="0.001" step="0.001" placeholder="e.g. 5" required><small class="field-hint" id="issueAvailableHint">Select an item to see available quantity.</small></label><label class="field-label">Issue date <span class="required">*</span><input id="issueDate" name="issueDate" type="date" readonly required><small class="field-hint">Uses today’s local date to keep on-hand stock accurate.</small></label></div>
+                <fieldset class="policy-choice"><legend>Allocation policy</legend><label class="policy-option selected"><input type="radio" name="policy" value="FEFO" checked><span class="policy-check"></span><span><strong>FEFO</strong><small>First Expiry, First Out</small></span><span class="recommended-tag">Recommended</span></label><label class="policy-option"><input type="radio" name="policy" value="FIFO"><span class="policy-check"></span><span><strong>FIFO</strong><small>First In, First Out</small></span></label></fieldset>
+                <label class="field-label">Reference / department <input name="reference" type="text" maxlength="80" placeholder="e.g. Lunch service #18"></label>
+                <label class="field-label">Notes <textarea name="notes" rows="2" maxlength="500" placeholder="Optional notes about this issue"></textarea></label>
+                <div class="form-actions"><button class="button button-primary button-wide" type="submit">Calculate & issue stock <span>→</span></button><p class="form-footnote">This updates quantities and records every batch allocation in the movement log.</p></div>
+              </form>
+            </section>
+            <aside class="issue-side-column"><section class="panel policy-explainer"><div class="explainer-icon">✳</div><h2>Why FEFO?</h2><p>Food safety depends on using the right stock at the right time. FEFO prioritises the nearest expiry date; FIFO prioritises the earliest received batch.</p><div class="mini-compare"><div><span class="compare-dot fefo-dot"></span><span><strong>FEFO</strong><small>Reduces expiry risk</small></span></div><div><span class="compare-dot fifo-dot"></span><span><strong>FIFO</strong><small>Tracks arrival order</small></span></div></div></section>
+              <section class="panel issue-result-panel" id="issueResultPanel"><div class="result-placeholder"><span class="result-placeholder-icon">↗</span><h3>Your allocation appears here</h3><p>Submit an issue to see which batches are selected and how much stock remains.</p></div></section>
+              <section class="safety-callout"><span>ⓘ</span><p><strong>Important</strong> Expired batches are never selected automatically. Follow your organisation's food safety and disposal rules.</p></section>
+            </aside>
+          </div>
+        </section>
+
+        <section class="page-view" id="page-movements">
+          <div class="page-heading"><div><p class="eyebrow">AUDIT TRAIL</p><h1>Stock movements</h1><p class="subheading">Every receipt, issue, adjustment and expiry write-off is logged.</p></div><div class="heading-actions"><a class="button button-secondary link-button" href="/api/export/movements.csv">↓ Export CSV</a></div></div>
+          <div class="movement-summary" id="movementSummary"></div>
+          <section class="panel"><div class="filter-toolbar"><div class="search-wrap"><span>⌕</span><input type="search" id="movementSearch" placeholder="Search movement, item or batch…" aria-label="Search stock movements"></div><select id="movementTypeFilter" aria-label="Filter movement type"><option value="">All movements</option><option value="RECEIVE">Stock received</option><option value="ISSUE">Stock issued</option><option value="ADJUSTMENT_ADD">Adjustment added</option><option value="ADJUSTMENT_REMOVE">Adjustment removed</option><option value="EXPIRED_WRITE_OFF">Expired write-off</option></select></div><div class="table-wrap"><table><thead><tr><th>DATE</th><th>MOVEMENT</th><th>ITEM / BATCH</th><th>QUANTITY</th><th>POLICY</th><th>REFERENCE / NOTES</th></tr></thead><tbody id="movementsTable"></tbody></table></div><div class="table-footer"><span id="movementCount">0 movements</span><span>Movement records are retained when batches are archived.</span></div></section>
+        </section>
+
+        <section class="page-view" id="page-reports">
+          <div class="page-heading"><div><p class="eyebrow">INSIGHTS & EXPORTS</p><h1>Reports</h1><p class="subheading">Understand current stock levels and keep a record of inventory activity.</p></div><div class="heading-actions"><button class="button button-secondary" id="printReport">⎙ Print report</button></div></div>
+          <div id="reportKpis" class="report-kpi-grid"></div>
+          <div class="report-grid"><section class="panel"><div class="panel-heading"><div><h2>Stock by category</h2><p>On-hand quantities grouped by category.</p></div></div><div id="reportCategoryChart" class="category-chart"></div></section><section class="panel"><div class="panel-heading"><div><h2>Expiry exposure</h2><p>Current units that may need attention.</p></div></div><div id="expiryExposure" class="exposure-list"></div></section></div>
+          <section class="panel export-panel"><div class="panel-heading"><div><h2>Download your data</h2><p>Export a spreadsheet for analysis or save a full backup before making changes.</p></div></div><div class="export-options"><div class="export-option"><span class="export-icon green">▤</span><div><strong>Inventory report (CSV)</strong><small>Batch quantities, expiry dates, suppliers and costs.</small></div><a class="button button-secondary button-small" href="/api/export/inventory.csv">Download CSV</a></div><div class="export-option"><span class="export-icon blue">↻</span><div><strong>Movement log (CSV)</strong><small>Full history of received, issued and adjusted stock.</small></div><a class="button button-secondary button-small" href="/api/export/movements.csv">Download CSV</a></div><div class="export-option"><span class="export-icon orange">⬇</span><div><strong>Complete backup (JSON)</strong><small>Inventory, movement history and settings, for restore.</small></div><a class="button button-secondary button-small" href="/api/backup">Download backup</a></div></div></section>
+        </section>
+
+        <section class="page-view" id="page-settings">
+          <div class="page-heading"><div><p class="eyebrow">PREFERENCES & SAFETY</p><h1>Settings & backup</h1><p class="subheading">Set your expiry alert window and protect your inventory data.</p></div></div>
+          <div class="settings-layout"><section class="panel"><div class="panel-heading"><div><h2>Expiry alerts</h2><p>Choose how far in advance to flag stock.</p></div><span class="round-icon">⚙</span></div><form id="settingsForm" class="form-stack"><label class="field-label">Alert items expiring within <div class="input-suffix"><input type="number" name="alertDays" id="alertDays" min="1" max="90" step="1" required><span>days</span></div><small class="field-hint">Use a value from 1 to 90 days. The default is 7.</small></label><button class="button button-primary" type="submit">Save preferences</button></form></section>
+            <section class="panel"><div class="panel-heading"><div><h2>Back up your data</h2><p>Your stock is stored in a local JSON file with an automatic previous-state snapshot.</p></div><span class="round-icon">⬇</span></div><p class="settings-copy">Download a full backup before moving the project or restoring previous stock records.</p><a class="button button-secondary" href="/api/backup">↓ Download current backup (.json)</a><div style="height:8px"></div><button class="button button-secondary" id="downloadPreviousBackup" type="button">↓ Download previous automatic snapshot</button><small class="field-hint">A previous-state snapshot is saved automatically before each stock/settings change.</small><div class="section-divider"></div><label class="field-label">Restore from backup<input type="file" id="restoreFile" accept=".json,.bak,application/json"><small class="field-hint">Restoring replaces current batches, movements and settings. Export a backup first.</small></label><button class="button button-danger-outline" id="restoreButton">Restore selected backup</button></section>
+            <section class="panel"><div class="panel-heading"><div><h2>CSV import format</h2><p>Bulk-load real inventory from a spreadsheet.</p></div><span class="round-icon">↑</span></div><p class="settings-copy">Required columns: <code>batchCode</code>, <code>itemName</code>, <code>quantity</code>, <code>unit</code>, <code>receivedDate</code>, and <code>expiryDate</code>. Dates must use YYYY-MM-DD. Use Inventory → Import CSV to start an upload.</p><button class="button button-secondary" id="downloadTemplate">↓ Download CSV template</button></section>
+            <section class="panel local-info-panel"><span class="info-shield">⌂</span><h2>Local-first by design</h2><p>This version runs on your computer and saves to <code>data/inventory.json</code>. It has no login or multi-user database, so do not expose it directly to the public internet. For multiple staff or multiple devices, add authenticated hosting and a managed database first.</p><div class="health-status"><span class="online-dot"></span><span id="serverHealthText">Checking local server…</span></div></section>
+          </div>
+        </section>
+      </div>
+      <footer class="main-footer"><span>FreshTrack Inventory <span class="footer-dot">•</span> Built for practical stock rotation</span><span>FEFO · FIFO · Batch traceability</span></footer>
+    </main>
+  </div>
+
+  <dialog id="batchDialog" class="app-dialog"><form method="dialog" class="dialog-close-form"><button class="dialog-close" aria-label="Close">×</button></form><div class="dialog-heading"><p class="eyebrow">INVENTORY RECORD</p><h2 id="batchDialogTitle">Add a new batch</h2><p>Add actual stock details so FreshTrack can calculate expiry alerts and allocations.</p></div><form id="batchForm" class="dialog-form"><input type="hidden" name="id"><div class="form-grid"><label class="field-label">Batch code <span class="required">*</span><input name="batchCode" maxlength="60" required placeholder="e.g. RICE-2026-01"></label><label class="field-label">Item name <span class="required">*</span><input name="itemName" maxlength="120" required placeholder="e.g. Basmati Rice"></label><label class="field-label">Category<input name="category" maxlength="80" placeholder="e.g. Grains"></label><label class="field-label">Unit <span class="required">*</span><input name="unit" maxlength="24" required placeholder="kg, L, packs…" value="kg"></label><label class="field-label">Quantity received <span class="required">*</span><input name="quantity" type="number" min="0.001" step="0.001" required placeholder="e.g. 25"></label><label class="field-label">Received date <span class="required">*</span><input name="receivedDate" type="date" required></label><label class="field-label">Expiry date <span class="required">*</span><input name="expiryDate" type="date" required></label><label class="field-label">Supplier<input name="supplier" maxlength="120" placeholder="Supplier / vendor"></label><label class="field-label">Cost per unit (₹)<input name="costPerUnit" type="number" min="0" step="0.01" placeholder="0.00"></label><label class="field-label full-span">Notes<textarea name="notes" rows="2" maxlength="500" placeholder="Storage location, handling notes, etc."></textarea></label></div><div class="expiry-preview" id="expiryPreview" role="status" aria-live="polite"><strong>Expiry preview</strong><span>Enter the received and expiry dates to see how many days remain.</span></div><p class="dialog-message" id="batchFormError" role="alert"></p><div class="dialog-actions"><button type="button" class="button button-secondary" data-close-dialog="batchDialog">Cancel</button><button type="submit" class="button button-primary" id="saveBatchButton">Save batch</button></div></form></dialog>
+
+  <dialog id="adjustDialog" class="app-dialog compact-dialog"><form method="dialog" class="dialog-close-form"><button class="dialog-close" aria-label="Close">×</button></form><div class="dialog-heading"><p class="eyebrow">STOCK CONTROL</p><h2>Adjust batch stock</h2><p id="adjustBatchDescription">Record additional stock, a correction or an expiry write-off.</p></div><form id="adjustForm" class="dialog-form"><input type="hidden" name="batchId"><div class="adjust-actions"><label><input type="radio" name="action" value="receive" checked><span>＋ Receive</span></label><label><input type="radio" name="action" value="remove"><span>− Remove</span></label><label><input type="radio" name="action" value="writeoff"><span>⌁ Expired write-off</span></label></div><label class="field-label">Quantity <span class="required">*</span><input name="quantity" type="number" min="0.001" step="0.001" required placeholder="Quantity"></label><label class="field-label">Reason / note<input name="notes" maxlength="500" placeholder="e.g. damaged packaging"></label><p class="dialog-message" id="adjustFormError" role="alert"></p><div class="dialog-actions"><button type="button" class="button button-secondary" data-close-dialog="adjustDialog">Cancel</button><button type="submit" class="button button-primary">Save adjustment</button></div></form></dialog>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>

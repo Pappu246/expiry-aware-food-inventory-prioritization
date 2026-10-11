@@ -1,0 +1,30 @@
+name: C11 CI
+on:
+  push:
+    branches: [main, dev, "audit/**", "c11-full-inventory-app-2026-10-11"]
+  pull_request:
+    branches: [main, dev, "audit/**"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compiler
+        run: gcc --version
+      - name: Build all C11 applications
+        run: make all
+      - name: Engine tests
+        run: make test
+      - name: Allocation failure tests
+        run: make test-allocation-failure
+      - name: Inventory app smoke tests
+        run: make app-smoke
+      - name: Sanitizer tests
+        run: make test-sanitize
+      - name: Website tests
+        run: |
+          cd website
+          node --test tests/*.test.js
