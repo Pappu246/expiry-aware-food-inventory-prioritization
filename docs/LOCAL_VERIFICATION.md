@@ -15,9 +15,9 @@ These are local test results from the prepared package. They are not a substitut
 
 ## Latest remote verification — 11 October 2026
 
-- Commit: `085f09cc6d7402ee2a1f98c182d58309413f9098`
-- GitHub Actions: [C11 CI run 38154997489](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38154997489) — success.
-- C engine suite: 13/13; allocation-failure suite: 14/14; interactive-app smoke script: five grouped scenarios passed.
+- Commit: `06c38dcebe730fb0b6c18faa0ef3e00ec596409b`
+- GitHub Actions: [C11 CI run 38155231772](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38154997489) — success.
+- C engine suite: 13/13; allocation-failure suite: 14/14; interactive-app smoke script: six grouped scenarios passed.
 - Showcase contract/behavior suite: 4/4; ASan/UBSan regression suite: 13/13; website suite: 28/28.
-- One of the five app scenarios confirms malformed inventory fails closed without rewriting either the source CSV or the previous backup.
+- Two of the six app scenarios confirm malformed inventory is preserved and a missing primary file with an available backup does not cause an empty inventory to be created.
 - This is a remote Linux CI result, not a claim that Windows-specific or Clang CI jobs ran in the current workflow.

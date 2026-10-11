@@ -3,10 +3,10 @@
 ## Latest remote verification — 11 October 2026
 
 - Repository: https://github.com/Pappu246/expiry-aware-food-inventory-prioritization
-- Latest main commit: `085f09cc6d7402ee2a1f98c182d58309413f9098`
-- Latest main C11 CI run: [GitHub Actions run 38154997489](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38154997489) — **success**.
+- Latest main commit: `06c38dcebe730fb0b6c18faa0ef3e00ec596409b`
+- Latest main C11 CI run: [GitHub Actions run 38155231772](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38154997489) — **success**.
 - C11 engine regression suite: **13/13 passed**; dedicated allocation-failure suite: **14/14 passed**.
-- Interactive-app smoke script: **5/5 grouped scenarios passed**, including future-date validation and fail-closed behavior for a malformed saved inventory.
+- Interactive-app smoke script: **6/6 grouped scenarios passed**, including strict date/future-receipt validation, malformed-file preservation, and missing-primary-file recovery when a backup exists.
 - Showcase contract/behavior suite: **4/4 passed**; AddressSanitizer/UndefinedBehaviorSanitizer suite: **13/13 passed**; website Node test suite: **28/28 passed**.
 - The current workflow is [.github/workflows/ci.yml](.github/workflows/ci.yml). It runs GCC C11 build/tests and Node tests on Ubuntu. It does **not** currently configure a Clang/PowerShell job or a Node 20/22 matrix.
 - Verified branches at the same commit: `main`, `dev`, `audit/benchmark-correctness`, `c11-clean-main-2026-10-11`, and `c11-full-inventory-app-2026-10-11`.
