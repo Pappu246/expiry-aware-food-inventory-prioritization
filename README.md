@@ -1,69 +1,60 @@
 # Expiry-Aware Food Inventory Prioritization Engine
 
-A dependency-free C11 Data Structures project with **three complementary ways to use it**:
+**C11 Data Structures & Algorithms project** — a custom binary Min-Heap for FEFO stock allocation, a hash table for batch ID lookup, an independent linear-scan FEFO baseline and a separate FIFO policy experiment.
 
-1. **Practical local inventory app** (`START_INVENTORY_APP.bat`): actual manual stock entry, per-item inventory, FEFO stock issue, expiry alerts, low-stock alerts, CSV import/export, persistent records and a transaction log.
-2. **Browser website** (`START_WEBSITE.bat`, code in `website/`): batch-entry forms, searchable inventory, FEFO/FIFO issue, expiry dashboard, movement history, CSV import/export, JSON backup/restore and reports. Requires Node.js 18+; no external npm packages.
-3. **Academic experiment harness** (`RUN_QUICK_DEMO.bat`, `RUN_FULL_DEMO.bat`): custom binary Min-Heap FEFO, independent Linear Scan FEFO baseline, FIFO policy simulation, deterministic synthetic traces, correctness tests and performance measurements.
+## Open the project
 
-The interactive app reuses the same C11 engine. It is offline and stores data locally; it does not require an API key, cloud account, database server or repository clone. GCC is required to compile it on Windows.
+- **Interactive showcase/demo:** https://expiry-aware-food-inventory-priorit.vercel.app/  
+  If the first deployment is not available yet, the Vercel daily deployment quota must reset before this link becomes live.
+- **GitHub source repository:** https://github.com/Pappu246/expiry-aware-food-inventory-prioritization
+- **C11 engine source:** [src/](src/)
+- **Interactive offline inventory app:** [src/inventory_app.c](src/inventory_app.c)
+- **Website source (local Node.js application):** [website/](website/)
+- **Browser showcase source:** [showcase/index.html](showcase/index.html)
+- **Project specification:** [PROJECT_SPEC.md](PROJECT_SPEC.md)
+- **Architecture:** [ARCHITECTURE.md](ARCHITECTURE.md)
+- **Benchmark methodology:** [BENCHMARK_PROTOCOL.md](BENCHMARK_PROTOCOL.md)
+- **Practical app guide:** [PRACTICAL_APP_GUIDE.md](PRACTICAL_APP_GUIDE.md)
+- **VGU A6 rubric alignment:** [A6_Rubric_Alignment.md](A6_Rubric_Alignment.md)
+- **Tests:** [tests/](tests/)
+- **Benchmark and experiment CSVs:** [CSV results in repository root](./)
 
-## Windows: start here
+## Features
 
-Extract the ZIP into a writable folder, then double-click:
+- C11 custom Min-Heap FEFO engine (First Expire, First Out).
+- Hash table for batch ID lookup and duplicate checking.
+- Independent linear-scan FEFO correctness/performance baseline.
+- FIFO policy comparison using documented synthetic workloads.
+- Practical offline C inventory manager: receive batches, search, issue stock, expiry alerts, low-stock warnings, CSV import/export, settings and transaction log.
+- Optional local browser inventory website with isolated tests.
+- Client-only showcase demo; sample batches never touch production stock or persist to a shared backend.
 
-- `START_INVENTORY_APP.bat` - opens the real-data inventory menu.
-- `RUN_QUICK_DEMO.bat` - runs regular/fault-injection tests and a small synthetic simulation.
-- `RUN_FULL_DEMO.bat` - generates all benchmark and policy experiment CSV evidence as well.
-- `START_WEBSITE.bat` - opens the local browser-based inventory website.
+## Build on Windows (PowerShell)
 
-The batch launchers set the working directory to the package folder. This keeps the `data` folder beside the project. They also launch PowerShell with a process-only execution-policy bypass for the existing demo script, if needed.
-
-## Practical inventory features
-
-- Receive a new batch with a unique ID, item name, positive quantity, received date and expiry date.
-- View and search inventory, kept separate by item name.
-- Issue a requested quantity using FEFO (earliest eligible expiry first), printing each batch allocation and any shortfall. FIFO is available only as an explicit comparison option.
-- Show expired batches and upcoming expiry windows, plus low-stock warnings.
-- Adjust quantities with a reason recorded in the audit log.
-- Import batches from a CSV template and export the current stock report.
-- Keep inventory and transaction data across restarts, with a prior inventory snapshot where available.
-
-Full instructions, CSV format and limitations for the C app: [PRACTICAL_APP_GUIDE.md](PRACTICAL_APP_GUIDE.md). Website instructions: [website/README.md](website/README.md).
-
-## Build/test on Windows (PowerShell)
+Requirements: GCC or Clang with C11 support; Python 3 is used by the app smoke test.
 
 ```powershell
 .\build.ps1 -App
 .\build.ps1 -Test
 .\build.ps1 -AllocFail
 .\build.ps1
-.\build\fefo.exe demo
-.\build\fefo.exe simulate 1000
-.\build\fefo.exe experiment
-.\build\fefo.exe benchmark
-.\build.ps1 -Metrics
 ```
 
-## Build/test on Linux/macOS
+## Build and test on Linux/macOS
 
 ```sh
 make all
 make test
-make test-sanitize
 make test-allocation-failure
 make app-smoke
-./build/fefo demo
-./build/fefo simulate 1000
-./build/fefo experiment
-./build/fefo benchmark
+make test-sanitize
 make operations
 ```
 
-## Benchmark interpretation
+For the optional local browser application, install Node.js 18 or later and run the start script described in [website/README.md](website/README.md).
 
-FEFO Heap and FEFO Linear Scan must select the same batch sequence for identical inventory. Benchmark speedup is selection/removal timing, not overall application speed. The policy experiment compares FEFO with FIFO using the same synthetic arrivals and demand; expired quantity is not a real-world savings estimate.
+## Interpretation and safety limits
 
-## Safety and deployment boundary
+Benchmark and policy experiment outputs describe the documented synthetic workloads only. Timing varies by machine and compiler. The project does not prove real-world food-waste reduction, certify food safety, track storage temperature, or support concurrent multi-user stock editing. Use consistent units and follow actual product labels and local food-safety procedures.
 
-The C app and website are local prototypes for a small stock room/canteen workflow, not a commercial multi-user system. The website stores its records in `website/data/inventory.json`; the C app uses the root `data/` directory. These stores are separate and are not synchronised. It does not assess temperature history, handling, allergens, recalls, legal donation status or whether food is safe to serve. Follow actual package labels and local food-safety procedures. Use one canonical name and one consistent quantity unit per item. Do not run two instances against the same data folder.
+The **showcase website** is an explanatory client-only demo and never stores actual stock. The **local inventory website** stores inventory in a local JSON file; do not publicly expose its local-only Node server as a shared production service.
