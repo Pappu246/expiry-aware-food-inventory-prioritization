@@ -4,13 +4,12 @@
 
 ## Open the project
 
-- **Interactive showcase/demo:** https://expiry-aware-food-inventory-priorit.vercel.app/  
-  If the first deployment is not available yet, the Vercel daily deployment quota must reset before this link becomes live.
+- **Interactive showcase source:** [showcase/index.html](showcase/index.html) — client-side FEFO/FIFO demo committed in this repository.
+- **Hosted showcase:** https://expiry-aware-food-inventory-priorit.vercel.app/ — **deployment pending**. Do not treat this URL as live until a successful deployment is confirmed.
 - **GitHub source repository:** https://github.com/Pappu246/expiry-aware-food-inventory-prioritization
 - **C11 engine source:** [src/](src/)
 - **Interactive offline inventory app:** [src/inventory_app.c](src/inventory_app.c)
 - **Website source (local Node.js application):** [website/](website/)
-- **Browser showcase source:** [showcase/index.html](showcase/index.html)
 - **Project specification:** [PROJECT_SPEC.md](PROJECT_SPEC.md)
 - **Architecture:** [ARCHITECTURE.md](ARCHITECTURE.md)
 - **Benchmark methodology:** [BENCHMARK_PROTOCOL.md](BENCHMARK_PROTOCOL.md)
@@ -19,6 +18,9 @@
 - **Submission bundle (PDF/DOCX/PPTX reports, viva notes, rubric and figures):** [Download ZIP](submission/A6_Submission_Artifacts.zip)
 - **Tests:** [tests/](tests/)
 - **Benchmark and experiment CSVs:** [CSV results in repository root](./)
+- **C11 CI workflow and run history:** [GitHub Actions](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/workflows/ci.yml)
+
+The source code, showcase, tests, benchmark outputs, guides and submission ZIP are committed to the GitHub repository. Hosting is a separate step: recent Vercel deployments have failed, and GitHub Pages could not be enabled by the repository's current Actions integration. The repository remains usable without hosting.
 
 ## Features
 
