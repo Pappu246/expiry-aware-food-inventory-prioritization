@@ -325,6 +325,30 @@ static int copy_file(const char *from, const char *to) {
     return 1;
 }
 
+/* Return 1 when files match, 0 when different or the right file is absent, -1 on I/O errors. */
+static int files_identical(const char *left, const char *right) {
+    FILE *a = fopen(left, "rb"), *b;
+    int ca, cb, identical = 1, read_failed = 0, saved_errno;
+    if (!a) return -1;
+    b = fopen(right, "rb");
+    if (!b) {
+        saved_errno = errno;
+        if (fclose(a) != 0) return -1;
+        return saved_errno == ENOENT ? 0 : -1;
+    }
+    for (;;) {
+        ca = fgetc(a);
+        cb = fgetc(b);
+        if (ca != cb) { identical = 0; break; }
+        if (ca == EOF) break;
+    }
+    if (ferror(a) || ferror(b)) read_failed = 1;
+    if (fclose(a) != 0) read_failed = 1;
+    if (fclose(b) != 0) read_failed = 1;
+    if (read_failed) return -1;
+    return identical ? 1 : 0;
+}
+
 static bool save_inventory(void) {
     FILE *f;
     size_t i;
@@ -350,6 +374,18 @@ static bool save_inventory(void) {
         int write_failed = ferror(f) ? 1 : 0;
         int close_failed = fclose(f) != 0 ? 1 : 0;
         if (write_failed || close_failed) { (void)remove(INVENTORY_TEMP); return false; }
+    }
+    {
+        int same_result = files_identical(INVENTORY_TEMP, INVENTORY_FILE);
+        if (same_result == 1) {
+            (void)remove(INVENTORY_TEMP);
+            return true; /* An unchanged save must not replace the previous-state backup. */
+        }
+        if (same_result < 0) {
+            fprintf(stderr, "Cannot verify existing inventory; refusing to replace it.\n");
+            (void)remove(INVENTORY_TEMP);
+            return false;
+        }
     }
     backup_result = copy_file(INVENTORY_FILE, INVENTORY_BACKUP);
     if (backup_result < 0) {

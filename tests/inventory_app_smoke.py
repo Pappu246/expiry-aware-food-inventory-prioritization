@@ -51,6 +51,10 @@ def main() -> int:
             raise AssertionError(f"Rice batch did not exhaust correctly: {rows['BATCH-R1']}")
         if rows["BATCH-B1"]["quantity"] != "7" or rows["BATCH-B1"]["status"] != "ACTIVE":
             raise AssertionError(f"different product was incorrectly changed: {rows['BATCH-B1']}")
+        # Final no-op save on exit must not overwrite the useful pre-issue backup.
+        backup = read_inventory(root / "data" / "inventory_backup.csv")
+        if backup.get("BATCH-R1", {}).get("quantity") != "5" or backup.get("BATCH-R1", {}).get("status") != "ACTIVE":
+            raise AssertionError(f"unchanged exit save overwrote the previous-state backup: {backup.get('BATCH-R1')}")
         # Reopen confirms persisted stock survives process exit.
         reopen = run_app(exe, root, "2\n0\n")
         if "BATCH-B1" not in reopen or "Beans" not in reopen:
