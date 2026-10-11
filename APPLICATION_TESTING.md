@@ -26,7 +26,7 @@ The black-box script now contains six grouped scenarios, including strict date v
 
 ## CI distinction
 
-`CI_VERIFICATION.md` records the previous GitHub Actions run for the original benchmark workflow. The interactive application is a package extension created after that run, so its local checks above should not be misrepresented as a remote GitHub Actions result. The current remote workflow now passes the expanded smoke suite on [commit 06c38dce](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38155231772): six grouped app scenarios, including strict date validation, corrupt-file preservation, and missing-primary-file recovery.
+`CI_VERIFICATION.md` separates the historical benchmark snapshot from current verification. The remote workflow passed for the functional implementation commit [06c38dce](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38155231772): six grouped app smoke scenarios, including strict date validation, corrupt-file preservation, and missing-primary-file recovery. Follow-on documentation-only commits were also checked by the C11 workflow; use the [workflow history](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/workflows/ci.yml) for the current default-branch run.
 
 ## Deep-audit regressions added — 11 October 2026
 

@@ -1,18 +1,18 @@
 # CI verification snapshot
 
-## Latest remote verification — 11 October 2026
+## Deep-audit verification — 11 October 2026
 
 - Repository: https://github.com/Pappu246/expiry-aware-food-inventory-prioritization
-- Latest main commit: `06c38dcebe730fb0b6c18faa0ef3e00ec596409b`
-- Latest main C11 CI run: [GitHub Actions run 38155231772](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38154997489) — **success**.
-- C11 engine regression suite: **13/13 passed**; dedicated allocation-failure suite: **14/14 passed**.
-- Interactive-app smoke script: **6/6 grouped scenarios passed**, including strict date/future-receipt validation, malformed-file preservation, and missing-primary-file recovery when a backup exists.
-- Showcase contract/behavior suite: **4/4 passed**; AddressSanitizer/UndefinedBehaviorSanitizer suite: **13/13 passed**; website Node test suite: **28/28 passed**.
-- The current workflow is [.github/workflows/ci.yml](.github/workflows/ci.yml). It runs GCC C11 build/tests and Node tests on Ubuntu. It does **not** currently configure a Clang/PowerShell job or a Node 20/22 matrix.
-- Verified branches at the same commit: `main`, `dev`, `audit/benchmark-correctness`, `c11-clean-main-2026-10-11`, and `c11-full-inventory-app-2026-10-11`.
-- Hosting remains unverified: Vercel reports a build-rate limit, and GitHub Pages site setup is denied by the current Actions integration permissions.
+- Functional code audited and tested at commit `06c38dcebe730fb0b6c18faa0ef3e00ec596409b`: [C11 CI run 38155231772](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38155231772) — **success**.
+- The tested source compiled with GCC C11 warnings-as-errors; engine regression suite **13/13**, allocation-failure suite **14/14**, interactive-app smoke suite **6/6**, showcase suite **4/4**, ASan/UBSan suite **13/13**, and website suite **28/28** passed.
+- The latest repository-history check also verified that the follow-on documentation-only commit passed CI: [C11 CI run history](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/workflows/ci.yml).
+- Branches were synchronized to the same commit during the audit: `main`, `dev`, `audit/benchmark-correctness`, `c11-clean-main-2026-10-11`, and `c11-full-inventory-app-2026-10-11`.
+- The active C11 workflow is [.github/workflows/ci.yml](.github/workflows/ci.yml). It runs the GCC C11 build and regression/smoke checks plus Node tests on Ubuntu. It does **not** currently configure a Clang/PowerShell CI job or a Node 20/22 matrix.
+- Hosting remains unverified: the Vercel commit status reports an account build-rate limit, and the earlier GitHub Pages setup failed due repository integration permissions. Source/CI success does not mean the website is publicly deployed.
 
 The remaining bullets and benchmark table below preserve a **historical validation snapshot** from an earlier commit. Do not interpret its branch state, artifact IDs, or CI-step list as the current workflow configuration.
+
+ from an earlier commit. Do not interpret its branch state, artifact IDs, or CI-step list as the current workflow configuration.
 
 
 - Repository: https://github.com/Pappu246/expiry-aware-food-inventory-prioritization
