@@ -1,20 +1,40 @@
 # Expiry-Aware Food Inventory Prioritization Engine
 
-A dependency-free C11 Data Structures project: a custom binary Min-Heap for FEFO (First Expire, First Out), open-addressing hash table for batch lookup and duplicate rejection, a linear-scan FEFO baseline, and a FIFO policy simulator.
+A dependency-free C11 Data Structures project with **three complementary ways to use it**:
 
-## Faculty demo on Windows (VS Code)
+1. **Practical local inventory app** (`START_INVENTORY_APP.bat`): actual manual stock entry, per-item inventory, FEFO stock issue, expiry alerts, low-stock alerts, CSV import/export, persistent records and a transaction log.
+2. **Browser website** (`START_WEBSITE.bat`, code in `website/`): batch-entry forms, searchable inventory, FEFO/FIFO issue, expiry dashboard, movement history, CSV import/export, JSON backup/restore and reports. Requires Node.js 18+; no external npm packages.
+3. **Academic experiment harness** (`RUN_QUICK_DEMO.bat`, `RUN_FULL_DEMO.bat`): custom binary Min-Heap FEFO, independent Linear Scan FEFO baseline, FIFO policy simulation, deterministic synthetic traces, correctness tests and performance measurements.
 
-The submission ZIP now carries the complete C11 source tree and build/demo scripts, so you can extract the package and run it offline without needing to clone the private repository first.
-~~~powershell
-.\demo.ps1 -Quick
-# Generate all benchmark and policy CSV evidence as well:
-.\demo.ps1
-~~~
+The interactive app reuses the same C11 engine. It is offline and stores data locally; it does not require an API key, cloud account, database server or repository clone. GCC is required to compile it on Windows.
 
-The project is intentionally a C11 command-line prototype, not a website. See [DEMO_GUIDE.md](DEMO_GUIDE.md) for the faculty talk track, troubleshooting and expected CSV outputs.
+## Windows: start here
 
-## Build on Windows (PowerShell)
-~~~powershell
+Extract the ZIP into a writable folder, then double-click:
+
+- `START_INVENTORY_APP.bat` - opens the real-data inventory menu.
+- `RUN_QUICK_DEMO.bat` - runs regular/fault-injection tests and a small synthetic simulation.
+- `RUN_FULL_DEMO.bat` - generates all benchmark and policy experiment CSV evidence as well.
+- `START_WEBSITE.bat` - opens the local browser-based inventory website.
+
+The batch launchers set the working directory to the package folder. This keeps the `data` folder beside the project. They also launch PowerShell with a process-only execution-policy bypass for the existing demo script, if needed.
+
+## Practical inventory features
+
+- Receive a new batch with a unique ID, item name, positive quantity, received date and expiry date.
+- View and search inventory, kept separate by item name.
+- Issue a requested quantity using FEFO (earliest eligible expiry first), printing each batch allocation and any shortfall. FIFO is available only as an explicit comparison option.
+- Show expired batches and upcoming expiry windows, plus low-stock warnings.
+- Adjust quantities with a reason recorded in the audit log.
+- Import batches from a CSV template and export the current stock report.
+- Keep inventory and transaction data across restarts, with a prior inventory snapshot where available.
+
+Full instructions, CSV format and limitations for the C app: [PRACTICAL_APP_GUIDE.md](PRACTICAL_APP_GUIDE.md). Website instructions: [website/README.md](website/README.md).
+
+## Build/test on Windows (PowerShell)
+
+```powershell
+.\build.ps1 -App
 .\build.ps1 -Test
 .\build.ps1 -AllocFail
 .\build.ps1
@@ -23,25 +43,27 @@ The project is intentionally a C11 command-line prototype, not a website. See [D
 .\build\fefo.exe experiment
 .\build\fefo.exe benchmark
 .\build.ps1 -Metrics
-~~~
+```
 
-## Build on Linux/macOS
-~~~sh
+## Build/test on Linux/macOS
+
+```sh
 make all
 make test
 make test-sanitize
 make test-allocation-failure
+make app-smoke
 ./build/fefo demo
 ./build/fefo simulate 1000
 ./build/fefo experiment
 ./build/fefo benchmark
 make operations
-~~~
+```
 
-The regular test harness contains 13 groups, including INT_MAX quantity/day-boundary cases. A dedicated one-shot allocation-failure build exercises inventory insertion failure, hash-table growth failure, and allocation-result failure; run it with `make test-allocation-failure` or `.\build.ps1 -AllocFail`. CI runs this fault-injection gate separately from AddressSanitizer and UndefinedBehaviorSanitizer. The `simulate` command writes results/generated/policy_simulation.csv. The `experiment` command writes a 180-row raw policy matrix (`policy_experiment_raw.csv`) and an 18-row mean/sample-standard-deviation summary (`policy_experiment_summary.csv`) for 1,000, 5,000 and 10,000 batches, ten seeds and target demand/supply ratios 0.50, 0.80 and 1.00 over 35 days. For each size and seed, the same fixed random stream generates arrivals and demand-day weights; each trace is replayed independently by heap FEFO and FIFO. GitHub Actions archives generated CSV outputs as a run artifact (30-day retention); the generated files are intentionally not committed as runtime output. The benchmark command writes raw seven-trial data to results/generated/structure_benchmark.csv and median/min/max summary data to results/generated/structure_benchmark_summary.csv for synthetic data sets of 1,000 to 100,000 batches. Summary speedup is calculated as the linear-scan median selection time divided by the heap median selection time. The separate instrumented operations target writes `structure_operation_counts.csv` with build and selection comparator counts, heap swaps, insertions, removals and heap extractions; this instrumentation runs outside the timing executable to avoid counter overhead changing the timing run. Report only measurements generated by these executable builds.
+## Benchmark interpretation
 
-## Frozen rules
-A batch is eligible if it is ACTIVE, quantity is positive, and today is not later than its expiry day. It expires when today is greater than expiry day; expiry day itself remains eligible. The comparator is expiry day, then received day, then batch ID. Partial allocation decrements quantity in place; exhausted stock is removed. Shortfalls are not re-queued. The same immutable synthetic trace is replayed by FEFO and FIFO policies.
+FEFO Heap and FEFO Linear Scan must select the same batch sequence for identical inventory. Benchmark speedup is selection/removal timing, not overall application speed. The policy experiment compares FEFO with FIFO using the same synthetic arrivals and demand; expired quantity is not a real-world savings estimate.
 
-## Safety boundary
-This academic prototype prioritizes inventory records, not physical food safety. It does not assess temperature history, handling, allergens, recalls, or donation legality, and does not certify food or replace responsible staff and applicable safety rules. Synthetic simulation outcomes are not real-world food-waste savings.
+## Safety and deployment boundary
+
+The C app and website are local prototypes for a small stock room/canteen workflow, not a commercial multi-user system. The website stores its records in `website/data/inventory.json`; the C app uses the root `data/` directory. These stores are separate and are not synchronised. It does not assess temperature history, handling, allergens, recalls, legal donation status or whether food is safe to serve. Follow actual package labels and local food-safety procedures. Use one canonical name and one consistent quantity unit per item. Do not run two instances against the same data folder.

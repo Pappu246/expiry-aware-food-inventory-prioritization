@@ -1,30 +1,16 @@
-# Local build outputs
+# Build artefacts
 /build/
-/bin/
-/obj/
 *.o
 *.obj
 *.exe
 *.out
-*.dll
-*.so
-*.dylib
-*.a
-*.lib
 
-# Generated result output; keep curated final result files separately
-/results/generated/
-/results/tmp/
+# Local runtime inventory — may contain real stock records
+/data/
+/website/data/inventory.json
+/website/data/*.tmp
 
-# IDE/editor
-.idea/
-.vscode/
-*.code-workspace
-
-# OS files
+# Local tooling
 .DS_Store
 Thumbs.db
-desktop.ini
-
-# Logs
 *.log

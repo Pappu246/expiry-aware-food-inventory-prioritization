@@ -1,8 +1,8 @@
 CC ?= gcc
 CPPFLAGS += -D_POSIX_C_SOURCE=200809L -Iinclude
 CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -Werror -O2
-.PHONY: all test test-sanitize test-allocation-failure operations clean
-all: build/fefo
+.PHONY: all test test-sanitize test-allocation-failure operations app-smoke clean
+all: build/fefo build/inventory_app
 build:
 	mkdir -p build
 build/fefo: src/main.c src/engine.c include/fefo/engine.h | build
@@ -25,3 +25,9 @@ operations: build/fefo_operations
 	./build/fefo_operations
 clean:
 	rm -rf build
+
+build/inventory_app: src/inventory_app.c src/engine.c include/fefo/engine.h | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) src/inventory_app.c src/engine.c -lm -o $@
+
+app-smoke: build/inventory_app
+	python3 tests/inventory_app_smoke.py ./build/inventory_app
