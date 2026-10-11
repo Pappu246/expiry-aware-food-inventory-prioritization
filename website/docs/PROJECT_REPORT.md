@@ -30,7 +30,7 @@ The present version does not provide user accounts, shared cloud storage, cross-
 
 **Application/API layer:** `server.js` uses Node.js's built-in HTTP server to serve the UI and validate API requests. Mutations are processed through a single in-process queue and the data file is replaced atomically after a successful update.
 
-**Business-logic layer:** `lib/inventory.js` validates batches and dates, calculates statuses, allocates stock and calculates summaries. FEFO builds a binary Min-Heap ordered by expiry date, received date and batch code; heap construction is linear in the number of eligible batches and each extraction is logarithmic. FIFO orders candidates by received date, expiry date and batch code, then traverses the ordered list. The application validates that an on-hand stock issue is dated today so a user cannot back-date an issue and accidentally consume a batch that has since expired.
+**Business-logic layer:** `lib/inventory.js` validates batches and dates, calculates statuses, allocates stock and calculates summaries. The current website allocator filters eligible batches and sorts FEFO candidates by expiry date, received date and batch code; FIFO candidates are sorted by received date, expiry date and batch code. The website currently uses sorting rather than the C prototype's Min-Heap. Sorting makes the website allocator approximately O(k log k) for k eligible batches per request. The application validates that an on-hand stock issue is dated today so a user cannot back-date an issue and accidentally consume a batch that has since expired.
 
 **Persistence layer:** `data/inventory.json` stores batch records, movement records, configuration and metadata. The JSON file is simple to inspect and back up, but has limits for multi-user workloads and concurrent server instances.
 
@@ -70,11 +70,11 @@ Inventory valuation is an estimate based on remaining quantity multiplied by the
 
 ## 9. Testing and verification
 
-The automated test suite uses Node's built-in test runner and does not require external dependencies. It tests calendar-date validation, field constraints, expiry classification, Min-Heap ordering, FEFO allocation, FIFO ordering, unit matching, exclusion of expired/archived batches, partial fulfillment, invalid policies, report totals, quoted CSV parsing and header aliases.
+The automated test suite uses Node's built-in test runner and does not require external dependencies. Unit tests cover calendar-date validation, field constraints, expiry classification, MinHeap utility behavior, FEFO/FIFO ordering, unit matching, exclusion of expired/archived/future-received stock, partial fulfillment, invalid policies, report totals, and CSV parsing. HTTP integration tests cover stock intake and issue, concurrency and shortfall accounting, CSV import/export, data validation and security headers, backup/restore validation, malformed-data recovery, path traversal rejection, restart persistence, local-only binding, and the case where the primary inventory file is missing while an automatic backup exists.
 
 The integration test launches the HTTP server against an isolated temporary data directory, adds batches through the API, rejects a duplicate code, issues stock through FEFO, confirms expired stock was not allocated, inspects remaining quantities and movements, checks CSV/JSON exports, and rejects a mismatched request origin.
 
-Verification result for this package build: **15 tests passed, 0 failed**. This demonstrates the tested cases; it is not a proof that every possible real-world failure has been eliminated.
+The latest verified remote run for the current implementation snapshot [38157576817](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38157576817) passed **29 website tests, 0 failed**. The run also passed the C engine, allocation-failure, interactive-app smoke, showcase and sanitizer jobs. This demonstrates the covered cases, not proof that every possible real-world failure has been eliminated.
 
 ## 10. How to run
 
