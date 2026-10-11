@@ -29,15 +29,31 @@ jobs:
           persist-credentials: true
       - name: Refresh current source and documentation; validate the ZIP
         run: python3 scripts/refresh_submission_archive.py
-      - name: Commit refreshed archive if it changed
+      - name: Commit refreshed archive, retrying if the branch advances
         shell: bash
         run: |
-          if git diff --quiet -- submission/A6_Submission_Artifacts.zip; then
-            echo "Submission archive already matches the checked-out tracked sources."
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+users.noreply.github.com"
+
+          for attempt in 1 2 3 4 5; do
+            # Rebuild from the current checkout and validate before every push attempt.
+            python3 scripts/refresh_submission_archive.py
+            if git diff --quiet -- submission/A6_Submission_Artifacts.zip; then
+              echo "Submission archive already matches the checked-out tracked sources."
+              exit 0
+            fi
+
             git add submission/A6_Submission_Artifacts.zip
             git commit -m "chore: refresh submission archive from current source"
-            git push origin "HEAD:${GITHUB_REF_NAME}"
-          fi
+            if git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"; then
+              exit 0
+            fi
+
+            echo "Push attempt ${attempt} raced with another branch update; refreshing from the remote head."
+            git fetch origin "${GITHUB_REF_NAME}"
+            git reset --hard FETCH_HEAD
+          done
+
+          echo "Could not publish a fresh submission archive after five attempts." >&2
+          exit 1
