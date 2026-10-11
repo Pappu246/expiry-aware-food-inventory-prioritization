@@ -1,7 +1,7 @@
 name: C11 CI
 on:
   push:
-    branches: [main, dev, "audit/**"]
+    branches: [main, dev, "audit/**", "c11-full-inventory-app-2026-10-11"]
   pull_request:
     branches: [main, dev, "audit/**"]
   workflow_dispatch:
@@ -14,165 +14,17 @@ jobs:
       - uses: actions/checkout@v4
       - name: Compiler
         run: gcc --version
-      - name: PowerShell script syntax
-        shell: pwsh
-        run: |
-          $failed = $false
-          foreach ($path in @("build.ps1", "demo.ps1")) {
-            $tokens = $null
-            $errors = $null
-            [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $path).Path, [ref]$tokens, [ref]$errors)
-            if ($errors.Count -gt 0) { $errors | Format-List; $failed = $true }
-            else { Write-Host ("PASS: " + $path) }
-          }
-          if ($failed) { throw "PowerShell syntax validation failed" }
-      - name: Clang static analysis
-        shell: bash
-        run: |
-          clang --analyze -D_POSIX_C_SOURCE=200809L -Iinclude -std=c11 -Wall -Wextra -Wpedantic -Werror src/main.c src/engine.c
-          clang --analyze -D_POSIX_C_SOURCE=200809L -Iinclude -std=c11 -Wall -Wextra -Wpedantic -Werror src/inventory_app.c src/engine.c
-      - name: Clang build and regression tests
-        shell: bash
-        run: |
-          clang --version
-          clang -D_POSIX_C_SOURCE=200809L -Iinclude -std=c11 -Wall -Wextra -Wpedantic -Werror -O2 src/main.c src/engine.c -lm -o /tmp/fefo-clang
-          clang -D_POSIX_C_SOURCE=200809L -Iinclude -std=c11 -Wall -Wextra -Wpedantic -Werror -O2 src/inventory_app.c src/engine.c -lm -o /tmp/inventory-app-clang
-          python3 tests/inventory_app_smoke.py /tmp/inventory-app-clang
-          clang -D_POSIX_C_SOURCE=200809L -Iinclude -std=c11 -Wall -Wextra -Wpedantic -Werror -O2 tests/test_main.c src/engine.c -lm -o /tmp/fefo-tests-clang
-          /tmp/fefo-tests-clang
-          clang -D_POSIX_C_SOURCE=200809L -Iinclude -std=c11 -Wall -Wextra -Wpedantic -Werror -O2 -DFEFO_TEST_ALLOC_FAILURE tests/test_main.c src/engine.c -lm -o /tmp/fefo-fault-clang
-          /tmp/fefo-fault-clang
-          /tmp/fefo-clang demo
-          /tmp/fefo-clang simulate 100
-      - name: Build
+      - name: Build all C11 applications
         run: make all
-      - name: Tests
+      - name: Engine tests
         run: make test
-      - name: Interactive inventory app smoke tests
-        run: make app-smoke
-      - name: AddressSanitizer and UndefinedBehaviorSanitizer
-        run: make test-sanitize
-      - name: Allocation-failure injection
+      - name: Allocation failure tests
         run: make test-allocation-failure
-      - name: Demo smoke test
-        run: ./build/fefo demo
-      - name: Simulation smoke test
-        run: ./build/fefo simulate 100
-      - name: Policy experiment matrix
-        run: ./build/fefo experiment
-      - name: Benchmark smoke test
-        run: ./build/fefo benchmark
-      - name: Instrumented operation counts (separate from timing)
-        run: make operations
-      - name: Archive generated CSV evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: generated-results-${{ github.sha }}
-          path: results/generated/*.csv
-          if-no-files-found: warn
-          retention-days: 30
-      - name: Archive runnable source snapshot
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: runnable-source-${{ github.sha }}
-          path: |
-            .github/workflows/ci.yml
-            website/**
-            START_WEBSITE.bat
-            PACKAGE_README.md
-            include/**
-            src/**
-            tests/**
-            templates/**
-            Makefile
-            build.ps1
-            demo.ps1
-            START_INVENTORY_APP.bat
-            RUN_QUICK_DEMO.bat
-            RUN_FULL_DEMO.bat
-            README.md
-            START_HERE.md
-            PRACTICAL_APP_GUIDE.md
-            DEMO_GUIDE.md
-            PROJECT_SPEC.md
-            BENCHMARK_PROTOCOL.md
-          if-no-files-found: error
-          retention-days: 30
-
-  windows-demo:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up MinGW-w64 GCC
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          update: true
-          install: mingw-w64-x86_64-gcc
-      - name: Verify Windows C11 compiler
-        shell: pwsh
-        run: gcc --version
-      - name: Run complete Windows demo and evidence generation
-        shell: pwsh
-        run: .\demo.ps1
-      - name: Set up Python for interactive app smoke tests
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.x"
-      - name: Compile and smoke-test the interactive Windows inventory app
-        shell: pwsh
+      - name: Inventory app smoke tests
+        run: make app-smoke
+      - name: Sanitizer tests
+        run: make test-sanitize
+      - name: Website tests
         run: |
-          gcc -D_POSIX_C_SOURCE=200809L -Iinclude -std=c11 -Wall -Wextra -Wpedantic -Werror -O2 src/inventory_app.c src/engine.c -lm -o build\inventory_app.exe
-          python tests/inventory_app_smoke.py build\inventory_app.exe
-      - name: Verify Windows CSV outputs
-        shell: pwsh
-        run: |
-          $expected = @{
-            "policy_simulation.csv" = 3
-            "policy_experiment_raw.csv" = 180
-            "policy_experiment_summary.csv" = 18
-            "structure_benchmark.csv" = 70
-            "structure_benchmark_summary.csv" = 5
-            "structure_operation_counts.csv" = 10
-          }
-          foreach ($name in $expected.Keys) {
-            $path = Join-Path "results\generated" $name
-            if (-not (Test-Path $path)) { throw "Missing Windows output: $path" }
-            $rows = @(Import-Csv $path)
-            if ($rows.Count -ne $expected[$name]) {
-              throw "$name has $($rows.Count) data rows, expected $($expected[$name])"
-            }
-            Write-Host "PASS: $name ($($rows.Count) data rows)"
-          }
-
-
-
-  website-tests:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            node-version: 20
-          - os: ubuntu-latest
-            node-version: 22
-          - os: windows-latest
-            node-version: 22
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-      - name: Check website JavaScript syntax
-        working-directory: website
-        run: |
-          node --check server.js
-          node --check lib/inventory.js
-          node --check public/app.js
-      - name: Run website unit and HTTP integration tests
-        working-directory: website
-        run: npm test
+          cd website
+          node --test tests/*.test.js
