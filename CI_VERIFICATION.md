@@ -1,13 +1,16 @@
 # CI verification snapshot
 
-## Current repository verification — 11 October 2026
+## Latest remote verification — 11 October 2026
 
-- Current main commit: `42a246a1e4cd29afa065466b43c57ecee732d581`
-- Latest C11 CI run: [GitHub Actions run 38154078428](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38154078428) — **success**.
-- Verified pipeline results: C11 CLI and inventory app built with GCC; engine suite 13/13; allocation-failure suite 14/14; four grouped app smoke scenarios passed; showcase tests 4/4; ASan/UBSan suite 13/13; website suite 28/28.
-- Current C11 workflow is [.github/workflows/ci.yml](.github/workflows/ci.yml). It runs one Ubuntu job with GCC and Node's built-in test runner; it does **not** currently define a Node 20/22 matrix or Clang/PowerShell CI steps.
-- `main`, `dev`, `audit/benchmark-correctness`, `c11-clean-main-2026-10-11`, and `c11-full-inventory-app-2026-10-11` were verified at the same commit SHA above.
-- Hosting is not verified as live: the most recent known Vercel check reports the account deployment build-rate limit, while the Pages workflow's configure step was denied permission to create a Pages site.
+- Repository: https://github.com/Pappu246/expiry-aware-food-inventory-prioritization
+- Latest main commit: `085f09cc6d7402ee2a1f98c182d58309413f9098`
+- Latest main C11 CI run: [GitHub Actions run 38154997489](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38154997489) — **success**.
+- C11 engine regression suite: **13/13 passed**; dedicated allocation-failure suite: **14/14 passed**.
+- Interactive-app smoke script: **5/5 grouped scenarios passed**, including future-date validation and fail-closed behavior for a malformed saved inventory.
+- Showcase contract/behavior suite: **4/4 passed**; AddressSanitizer/UndefinedBehaviorSanitizer suite: **13/13 passed**; website Node test suite: **28/28 passed**.
+- The current workflow is [.github/workflows/ci.yml](.github/workflows/ci.yml). It runs GCC C11 build/tests and Node tests on Ubuntu. It does **not** currently configure a Clang/PowerShell job or a Node 20/22 matrix.
+- Verified branches at the same commit: `main`, `dev`, `audit/benchmark-correctness`, `c11-clean-main-2026-10-11`, and `c11-full-inventory-app-2026-10-11`.
+- Hosting remains unverified: Vercel reports a build-rate limit, and GitHub Pages site setup is denied by the current Actions integration permissions.
 
 The remaining bullets and benchmark table below preserve a **historical validation snapshot** from an earlier commit. Do not interpret its branch state, artifact IDs, or CI-step list as the current workflow configuration.
 

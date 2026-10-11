@@ -22,8 +22,12 @@ Run `make app-smoke` to reproduce the following checks using an isolated tempora
 4. CSV bulk import accepts a quoted item name containing a comma and skips a batch whose expiry date has already passed.
 5. An ACTIVE saved batch past its date becomes EXPIRED at startup and is written to the log; a batch expiring today remains eligible under the project's declared boundary rule.
 
-The black-box test script printed PASS for each of its four grouped scenarios. These tests use test-only records and isolated directories; they do not modify real user stock.
+The black-box test script previously printed PASS for each of its four original grouped scenarios; the current script now has five scenarios. These tests use test-only records and isolated directories; they do not modify real user stock.
 
 ## CI distinction
 
-`CI_VERIFICATION.md` records the previous GitHub Actions run for the original benchmark workflow. The interactive application is a package extension created after that run, so its local checks above should not be misrepresented as a remote GitHub Actions result. The updated workflow includes compilation and app smoke checks, but no new remote run is asserted in this package.
+`CI_VERIFICATION.md` records the previous GitHub Actions run for the original benchmark workflow. The interactive application is a package extension created after that run, so its local checks above should not be misrepresented as a remote GitHub Actions result. The current remote workflow now passes the expanded smoke suite on [commit 085f09cc](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38154997489): five grouped app scenarios, including strict date and corrupt-file preservation regressions.
+
+## Deep-audit regressions added — 11 October 2026
+
+The latest smoke run also verifies that a malformed saved inventory cannot be silently partially loaded and rewritten on exit. The app now stops before its normal expiry/exit save path, preserving both the original file and the last backup for manual recovery.
