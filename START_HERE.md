@@ -28,4 +28,4 @@ The benchmark inputs are synthetic research data; do not confuse them with your 
 
 ## Website test suite
 
-From the `website` folder run `npm test`. The current website package contains 29 automated tests covering validation, expiry rules, FEFO/FIFO allocation, concurrency, backup recovery (including a missing primary inventory file), CSV behavior, API integration, and persistence across process restart. The last verified run for the source commit is [GitHub Actions run 38157576817](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38157576817).
+From the `website` folder run `npm test`. The current website package contains 29 automated tests covering validation, expiry rules, FEFO/FIFO allocation, concurrency, backup recovery (including a missing primary inventory file), CSV behavior, API integration, and persistence across process restart. The last verified run for the source commit is [GitHub Actions run 38157576817](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38157834245).
