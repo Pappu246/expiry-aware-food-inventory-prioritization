@@ -5,7 +5,7 @@
 - Repository: https://github.com/Pappu246/expiry-aware-food-inventory-prioritization
 - Canonical source branch: `main`.
 - The live [C11 CI workflow history](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/workflows/ci.yml) is authoritative for the exact commit and result. This file is a guide, not a substitute for the run attached to the current branch head.
-- The latest deep-audit implementation snapshot before the recovery regression below was tested at [run 38155231772](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38155231772), commit `06c38dcebe730fb0b6c18faa0ef3e00ec596409b`. The later documentation snapshot at commit `191d8b5fe086bcd49b75a4e1dd38b14c2051a536` passed [run 38155493475](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38155493475). Newer source commits must be checked in the workflow history rather than inferred from these historical links.
+- The latest verified source/test snapshot is commit `1ccb918872ce58cb042a73a0c881e7eb1249b7ab`, which passed [C11 CI run 38157834245](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38157834245), including the backup-recovery regression. The corresponding refreshed archive was validated in [archive run 38157834240](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38157834240). The subsequent main commit `d5bb47b42f33450073aa87bc7a128a075bbac0db` only refreshed the ZIP; check the live workflow history before citing later changes.
 
 ## Active C11 workflow
 
@@ -19,7 +19,7 @@ The current `.github/workflows/ci.yml` job runs on Ubuntu and performs:
 6. AddressSanitizer/UndefinedBehaviorSanitizer regression tests.
 7. Website Node.js unit and HTTP integration tests.
 
-The verified deep-audit run above reported: engine **13/13**, allocation-failure **14/14**, interactive-app smoke **6/6 grouped scenarios**, showcase **4/4**, ASan/UBSan **13/13**, and website **28/28**. The backup-recovery regression added after that snapshot increases the website test count; use the result for the new commit to confirm the updated count.
+The latest verified C11 CI run reports: engine **13/13**, allocation-failure **14/14**, interactive-app smoke **6/6 grouped scenarios**, showcase **4/4**, ASan/UBSan **13/13**, and website **29/29**. The separate archive job validates the refreshed ZIP's paths and CRCs, the PDF/DOCX/PPTX container structure, the six core report/presentation/viva deliverables, and checks that key packaged source files exactly match the checked-out source.
 
 The active workflow does **not** configure a Clang/PowerShell job or a Node.js version matrix. Older local/CI notes about those checks are historical and should not be presented as steps in the current workflow. The current site is a local single-user app; successful source CI does not imply public hosting.
 
