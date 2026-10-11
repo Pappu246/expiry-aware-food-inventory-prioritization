@@ -1,0 +1,8 @@
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
+# Never commit user inventory or temporary data.
+data/inventory.json
+data/*.tmp
+data/inventory.json.bak
