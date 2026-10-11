@@ -1,0 +1,12 @@
+{
+  "name": "a6-expiry-aware-food-inventory-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local-first expiry-aware food inventory website demonstrating FEFO, FIFO, heap-inspired prioritization and audit movements.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=18" }
+}
