@@ -42,7 +42,7 @@ The core DSA engine will not implement a commercial inventory system, ERP, donat
 ## 5. Operating assumptions
 
 1. **One homogeneous stock pool per run.** Quantities within one run are interchangeable units of the same product or approved product pool. Multi-SKU allocation is out of scope.
-2. A batch is eligible exactly when its status is ACTIVE, its remaining quantity is greater than zero, and today is not later than its expiry day.
+2. A batch is eligible exactly when its status is ACTIVE, its remaining quantity is greater than zero, its received day is not later than today, and today is not later than its expiry day. A future receipt is not on-hand stock; the simulator inserts an arrival only on its arrival day.
 3. A batch is expired exactly when **today > expiryDay**. It remains eligible on expiryDay and becomes expired from the next day onward.
 4. The application uses recorded dates and quantities only. It does not determine whether food is physically safe.
 5. All simulation strategies receive the same immutable arrival and demand trace.
@@ -67,7 +67,7 @@ Validation:
 - Reject duplicate batch IDs.
 - Reject zero/negative quantities.
 - Reject expiry day earlier than received day.
-- Reject already-expired batches when adding to the live demo.
+- Reject already-expired batches and future-received batches when adding on-hand stock; simulated future arrivals are inserted only on their event day.
 - Keep IDs registered after a batch is exhausted/expired so IDs cannot be silently reused.
 - The heap and hash table refer to the same FoodBatch object/pointer; no stale copies.
 - Document capacities for fixed character arrays and reject values that exceed them rather than truncate silently.

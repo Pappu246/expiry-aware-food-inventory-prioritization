@@ -28,6 +28,7 @@ static bool test_simulation(void){EventTrace a={0},b={0};SimulationResult x={0},
 static bool test_validation_edges(void){
 FoodBatch b;EventTrace generated={0},trace={0};ArrivalEvent arrivals[2]={{0}};DemandEvent demands[2]={{0}};SimulationResult result={0};
 CHECK(food_batch_init(&b,"A","Pool",0,0,1)==FEFO_ERR_INVALID);CHECK(food_batch_init(&b,"A","Pool",1,3,2)==FEFO_ERR_INVALID);
+{Inventory future={0};FoodBatch pending;CHECK(food_batch_init(&pending,"FUTURE","Pool",1,2,5)==FEFO_OK);CHECK(!food_batch_eligible(&pending,1));CHECK(inventory_init(&future,POLICY_HEAP_FEFO)==FEFO_OK);CHECK(inventory_add(&future,&pending,1)==FEFO_ERR_INVALID);CHECK(inventory_add(&future,&pending,2)==FEFO_OK);inventory_destroy(&future);}
 CHECK(event_trace_generate(&generated,10,30,1U,NAN)==FEFO_ERR_INVALID);CHECK(generated.arrivals==NULL&&generated.demands==NULL);
 for(size_t i=0;i<2U;++i){(void)snprintf(arrivals[i].batch_id,sizeof(arrivals[i].batch_id),"%c",(int)('A'+i));(void)snprintf(arrivals[i].item,sizeof(arrivals[i].item),"Pool");arrivals[i].day=(int)i;arrivals[i].quantity=1;arrivals[i].received_day=(int)i;arrivals[i].expiry_day=(int)i+3;demands[i].day=(int)i;demands[i].quantity=1;}
 trace.arrivals=arrivals;trace.arrival_count=2U;trace.demands=demands;trace.demand_count=2U;trace.horizon_days=2;trace.seed=9U;trace.demand_ratio=1.0;trace.total_supply=2;trace.total_demand=2;
@@ -113,16 +114,16 @@ size_t i,steps=0U;bool both_empty=false;
 CHECK(inventory_init(&heap,POLICY_HEAP_FEFO)==FEFO_OK);
 CHECK(inventory_init(&linear,POLICY_LINEAR_FEFO)==FEFO_OK);
 for(i=0;i<BATCHES;++i){
-char id[FEFO_BATCH_ID_CAP];int received=(int)(test_rng_next(&state)%12U);int expiry=received+(int)(test_rng_next(&state)%12U);int quantity=1+(int)(test_rng_next(&state)%4U);
+char id[FEFO_BATCH_ID_CAP];int received=(int)(test_rng_next(&state)%12U);int expiry=11+(int)(test_rng_next(&state)%12U);int quantity=1+(int)(test_rng_next(&state)%4U);
 (void)snprintf(id,sizeof(id),"R%02u-%03zu",(unsigned)seed,i);
 CHECK(food_batch_init(&heap_batches[i],id,"Random test pool",quantity,received,expiry)==FEFO_OK);
 linear_batches[i]=heap_batches[i];
-CHECK(inventory_add(&heap,&heap_batches[i],0)==FEFO_OK);
-CHECK(inventory_add(&linear,&linear_batches[i],0)==FEFO_OK);
+CHECK(inventory_add(&heap,&heap_batches[i],11)==FEFO_OK);
+CHECK(inventory_add(&linear,&linear_batches[i],11)==FEFO_OK);
 }
 while(steps<=(size_t)(BATCHES*4)){
-FefoStatus hs=inventory_allocate(&heap,1,0,&hr);
-FefoStatus ls=inventory_allocate(&linear,1,0,&lr);
+FefoStatus hs=inventory_allocate(&heap,1,11,&hr);
+FefoStatus ls=inventory_allocate(&linear,1,11,&lr);
 CHECK(hs==FEFO_OK&&ls==FEFO_OK);
 CHECK(hr.fulfilled==lr.fulfilled&&hr.shortfall==lr.shortfall&&hr.line_count==lr.line_count&&hr.outcome==lr.outcome);
 if(hr.line_count==1U)CHECK(strcmp(hr.lines[0].batch_id,lr.lines[0].batch_id)==0&&hr.lines[0].quantity==lr.lines[0].quantity);

@@ -461,6 +461,7 @@ static bool add_to_memory(const char *id, const char *item, int qty, int receive
     FefoStatus s;
     if (g_batch_count >= APP_MAX_BATCHES) { puts("Inventory capacity reached (10,000 batches). Export/ archive data before adding more."); return false; }
     if (id_exists(id)) { printf("Batch ID '%s' already exists. IDs are not reused, including after stock is exhausted.\n", id); return false; }
+    if (received_day > g_today) { puts("This date is in the future; future receipts cannot be added as on-hand stock."); return false; }
     if (!allow_expired && expiry_day < g_today) { puts("This batch is already past its expiry date. Do not add it as active stock."); return false; }
     s = food_batch_init(&b, id, item, qty, received_day, expiry_day);
     if (s != FEFO_OK) { printf("Invalid batch: %s\n", fefo_status_string(s)); return false; }
@@ -489,7 +490,7 @@ static void load_inventory(void) {
         FoodBatch *b;
         if (row_result < 0 || field_count != 6U || !fields[0][0] || !fields[1][0] ||
             !parse_int_strict(fields[2], &quantity) || quantity < 0 ||
-            !parse_date(fields[3], &received) || !parse_date(fields[4], &expiry) || expiry < received ||
+            !parse_date(fields[3], &received) || !parse_date(fields[4], &expiry) || received > g_today || expiry < received ||
             !parse_status(fields[5], &status) || strlen(fields[0]) >= FEFO_BATCH_ID_CAP || strlen(fields[1]) >= FEFO_ITEM_NAME_CAP) {
             fprintf(stderr, "Warning: skipped malformed inventory row near line %lu.\n", (unsigned long)(line_no + 1U)); ++line_no; continue;
         }
@@ -556,7 +557,7 @@ static size_t available_stock_for_item(const char *item, long long *qty_out) {
     long long qty = 0;
     for (i = 0U; i < g_batch_count; ++i) {
         FoodBatch *b = &g_batches[i];
-        if (compare_case_insensitive(b->item, item) == 0 && b->status == BATCH_ACTIVE && b->quantity > 0 && b->expiry_day >= g_today) {
+        if (compare_case_insensitive(b->item, item) == 0 && b->status == BATCH_ACTIVE && b->quantity > 0 && b->received_day <= g_today && b->expiry_day >= g_today) {
             qty += b->quantity; ++count;
         }
     }
@@ -579,7 +580,7 @@ static ProductSummary *build_product_summaries(size_t *count_out) {
         const FoodBatch *b = &g_batches[i];
         ProductSummary *p = &items[n++];
         (void)memcpy(p->name, b->item, strlen(b->item) + 1U);
-        if (b->status == BATCH_ACTIVE && b->quantity > 0 && b->expiry_day >= g_today) {
+        if (b->status == BATCH_ACTIVE && b->quantity > 0 && b->received_day <= g_today && b->expiry_day >= g_today) {
             p->available_qty = b->quantity; p->active_batches = 1U;
         } else if (b->status == BATCH_EXPIRED && b->quantity > 0) {
             p->expired_qty = b->quantity; p->expired_batches = 1U;
@@ -608,7 +609,7 @@ static void dashboard(void) {
     char today_text[11]; format_date(g_today, today_text);
     for (i = 0U; i < g_batch_count; ++i) {
         const FoodBatch *b = &g_batches[i];
-        if (b->status == BATCH_ACTIVE && b->quantity > 0 && b->expiry_day >= g_today) {
+        if (b->status == BATCH_ACTIVE && b->quantity > 0 && b->received_day <= g_today && b->expiry_day >= g_today) {
             ++active; available += b->quantity;
             if (b->expiry_day - g_today <= 7) ++expiring;
         } else if (b->status == BATCH_EXPIRED && b->quantity > 0) { ++expired; expired_qty += b->quantity; }
@@ -668,6 +669,7 @@ static void receive_stock(void) {
         !ask_int("Quantity in your chosen unit (e.g. bags, packets, kg): ", 1, INT_MAX, &qty) ||
         !input_date("Received date YYYY-MM-DD (blank = today): ", &received, true) ||
         !input_date("Expiry date YYYY-MM-DD: ", &expiry, false)) return;
+    if (received > g_today) { puts("Rejected: received date cannot be in the future for stock already on hand."); return; }
     if (expiry < received) { puts("Rejected: expiry date cannot be before received date."); return; }
     if (expiry < g_today) { puts("Rejected: this batch is already expired; it cannot be added as active stock."); return; }
     if (!add_to_memory(id, item, qty, received, expiry, false, &idx)) return;
@@ -788,7 +790,7 @@ static void expiry_report(void) {
     }
     for (i = 0U; i < g_batch_count; ++i) {
         FoodBatch *b = &g_batches[i];
-        if (b->status == BATCH_ACTIVE && b->quantity > 0 && b->expiry_day >= g_today && b->expiry_day - g_today <= days_ahead) {
+        if (b->status == BATCH_ACTIVE && b->quantity > 0 && b->received_day <= g_today && b->expiry_day >= g_today && b->expiry_day - g_today <= days_ahead) {
             print_batch(b); ++soon_count;
         }
     }
@@ -840,7 +842,7 @@ static void export_stock_report(void) {
         format_date(b->received_day, received); format_date(b->expiry_day, expiry);
         (void)snprintf(quantity, sizeof(quantity), "%d", b->quantity);
         (void)snprintf(days, sizeof(days), "%d", b->expiry_day - g_today);
-        (void)snprintf(available, sizeof(available), "%d", (b->status == BATCH_ACTIVE && b->quantity > 0 && b->expiry_day >= g_today) ? b->quantity : 0);
+        (void)snprintf(available, sizeof(available), "%d", (b->status == BATCH_ACTIVE && b->quantity > 0 && b->received_day <= g_today && b->expiry_day >= g_today) ? b->quantity : 0);
         if (csv_write_field(f, b->id) || fputc(',', f) == EOF || csv_write_field(f, b->item) || fputc(',', f) == EOF ||
             fputs(quantity, f) == EOF || fputc(',', f) == EOF || fputs(received, f) == EOF || fputc(',', f) == EOF ||
             fputs(expiry, f) == EOF || fputc(',', f) == EOF || fputs(status_name(b->status), f) == EOF || fputc(',', f) == EOF ||

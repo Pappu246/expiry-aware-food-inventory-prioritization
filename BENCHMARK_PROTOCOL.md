@@ -22,7 +22,7 @@ The `experiment` command exports the full policy matrix at 1,000, 5,000 and 10,0
 - **n:** number of generated batches in a data set.
 - **m:** number of selection/removal operations in a structure benchmark trial.
 - **today:** integer simulation day.
-- **Eligible:** ACTIVE, quantity > 0, and today <= expiry day.
+- **Eligible:** ACTIVE, quantity > 0, received day <= today, and today <= expiry day.
 - **Expired:** today > expiry day.
 - **FEFO order:** expiry day ascending, received day ascending, then batch ID lexicographically ascending.
 - **Supply:** total quantity in arrivals.
