@@ -532,6 +532,9 @@ const server = http.createServer(async (req, res) => {
 });
 
 async function start() {
+  if (!['127.0.0.1', 'localhost', '::1'].includes(HOST)) {
+    throw new Error('Refusing to bind to non-loopback host: ' + HOST + '. This local-only inventory server has no authentication.');
+  }
   await ensureDb();
   server.listen(PORT, HOST, () => {
     const address = server.address();

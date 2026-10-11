@@ -262,3 +262,27 @@ test('saved stock and movement history survive a server process restart', async 
   assert.equal(data.batches.find((b) => b.batchCode === 'PERSIST-1').quantity, 8);
   assert.ok(data.movements.some((m) => m.type === 'RECEIVE' && m.batchCode === 'PERSIST-1'));
 });
+ 
+test('local inventory server refuses non-loopback network binding', async (t) => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'freshtrack-bind-guard-'));
+  const proc = spawn(process.execPath, ['server.js'], {
+    cwd: path.resolve(__dirname, '..'),
+    env: { ...process.env, HOST: '0.0.0.0', PORT: '0', FRESHTRACK_DATA_DIR: dir },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let output = '';
+  proc.stdout.on('data', (chunk) => { output += chunk.toString(); });
+  proc.stderr.on('data', (chunk) => { output += chunk.toString(); });
+  t.after(async () => {
+    if (proc.exitCode === null) { proc.kill('SIGTERM'); await new Promise((resolve) => proc.once('exit', resolve)); }
+    await fs.rm(dir, { recursive: true, force: true });
+  });
+  const exitCode = await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => { proc.kill('SIGTERM'); reject(new Error('Bind-guard server did not exit promptly.')); }, 5000);
+    proc.once('error', (error) => { clearTimeout(timer); reject(error); });
+    proc.once('exit', (code) => { clearTimeout(timer); resolve(code); });
+  });
+  assert.notEqual(exitCode, 0, 'a public-interface bind must fail closed');
+  assert.match(output, /Refusing to bind to non-loopback host: 0\.0\.0\.0/);
+  assert.equal(await fs.access(path.join(dir, 'inventory.json')).then(() => true, () => false), false, 'rejected startup must not create an inventory database');
+});
