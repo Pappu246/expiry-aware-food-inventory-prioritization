@@ -31,7 +31,7 @@ The core C11 engine, local apps, benchmark outputs, guides and submission ZIP re
 - FIFO policy comparison using documented synthetic workloads.
 - Practical offline C inventory manager: receive batches, search, issue stock, expiry alerts, low-stock warnings, CSV import/export, settings and transaction log.
 - Optional local browser inventory website with isolated tests.
-- Account-based FreshTrack cloud UI with Supabase authentication and inventory workflows; this branch adds the Google OAuth button. A payment gateway is not wired yet.
+- Account-based FreshTrack cloud UI with Supabase authentication and inventory workflows; this branch adds the Google OAuth button.
 - Client-only C11 showcase demo;
 
 ## Build on Windows (PowerShell)
