@@ -21,7 +21,7 @@ test('easy mode assets are linked and included in the production build',()=>{
 
 test('simple add flow offers one-tap categories and rice maps to grains',()=>{
  const js=read('easy-mode.js'),css=read('easy-mode.css');
- for(const key of ['rice','lentils','flour','oil','sugar','milk','vegetables','other'])assert.match(js,new RegExp('data-easy-item="'+key+'"'));
+ for(const key of ['rice','lentils','flour','oil','sugar','salt','spices','milk','vegetables','other'])assert.match(js,new RegExp('data-easy-item="'+key+'"'));
  assert.match(js,/rice:\{en:'Rice',hi:'चावल',category:'Grains',unit:'kg'/);
  assert.match(js,/ensureBatchCode\(\)/);
  assert.match(js,/received\.value=todayIndia\(\)/);
@@ -67,4 +67,26 @@ test('Vercel permits only same-origin microphone use for voice controls',()=>{
 test('Hindi localization includes rice category, pantry and everyday unit labels',()=>{
  const js=read('easy-mode.js');
  for(const pair of ["'Grains':'अनाज'","'Pantry':'राशन'","'Choose category':'श्रेणी चुनें'","'kg':'किलो (kg)'","'g':'ग्राम (g)'","'litre':'लीटर'","'ml':'मिलीलीटर'","'units':'पीस'","'packs':'पैकेट'","'boxes':'डिब्बे'"])assert.ok(js.includes(pair),pair);
+});
+
+
+test('backup and sign out are moved into the three-dot settings menu',()=>{
+ const js=read('easy-mode.js'),html=read('index.html'),css=read('easy-mode.css');
+ assert.match(html,/id="backupBtn"/);
+ assert.match(html,/id="logout"/);
+ assert.match(js,/const accountActions=document\.createElement\('div'\)/);
+ assert.match(js,/for\(const id of \['backupBtn','logout'\]\)/);
+ assert.match(js,/accountActions\.append\(button\)/);
+ assert.match(js,/menuDivider\.insertAdjacentElement\('beforebegin',accountActions\)/);
+ assert.match(css,/\.easy-account-actions\{display:grid/);
+});
+
+test('Hindi voice mode parses Hindi digits and quantities without silently classifying unknown items as Other',()=>{
+ const js=read('easy-mode.js');
+ assert.match(js,/recognition\.lang=prefs\.language==='hi'\?'hi-IN':'en-IN'/);
+ assert.match(js,/replace\(\/\[०-९\]\/g/);
+ assert.match(js,/salt:\{en:'Salt',hi:'नमक',category:'Pantry',unit:'kg'/);
+ assert.match(js,/spices:\{en:'Spices',hi:'मसाले',category:'Pantry',unit:'packs'/);
+ assert.match(js,/पच्चीस/);
+ assert.match(js,/I could not identify the item/);
 });
