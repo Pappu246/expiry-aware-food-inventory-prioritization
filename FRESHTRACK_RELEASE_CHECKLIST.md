@@ -26,3 +26,12 @@
 ## Rollback
 
 The previous FreshTrack deployment ID is `dpl_DE1dAMa9wheLFTsbGgZ3ryTVGAA3`. If the new app fails, assign `freshtrack-inventory.vercel.app` back to that deployment. The prior static C11 production deployment was `dpl_HaMqySaJ44iE6xwN3CVBK4jLt5PH`; use it only when intentionally restoring the showcase rather than FreshTrack.
+
+
+## Easy-access UI update
+
+- [ ] Easy Mode category chooser, automatic batch ID/received date and printed-expiry guidance verified.
+- [ ] Three-dot settings tested for System/Light/Dark, Hindi/English, text size, Easy Mode and advanced tools.
+- [ ] Voice entry/read-aloud tested in a supported browser and gracefully unavailable in unsupported browsers.
+- [ ] Account deletion confirmed only against a dedicated test account; do not test permanent deletion with real inventory.
+- [ ] Both public aliases smoke-tested after deployment.

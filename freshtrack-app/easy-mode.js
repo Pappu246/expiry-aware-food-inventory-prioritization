@@ -1,0 +1,192 @@
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+const PREF_KEY='freshtrack-preferences-v1';
+const defaults={theme:'system',language:'hi',fontSize:'large',simpleMode:true,voiceHelp:true,showAdvanced:false};
+function readPrefs(){try{const saved=JSON.parse(localStorage.getItem(PREF_KEY)||'{}');return Object.assign({},defaults,saved)}catch{return Object.assign({},defaults)}}
+let prefs=readPrefs(),selectedItemKey='',activeRecognition=null,translationObserver=null;
+const originalText=new WeakMap();
+const enToHi={
+'Private cloud workspace':'आपका निजी स्टॉक','EXPIRY-AWARE INVENTORY':'समाप्ति-तारीख वाला स्टॉक','Backup':'बैकअप','Sign out':'लॉग आउट',
+'Stock clarity, less waste':'कम बर्बादी, आसान हिसाब','Know what to use next.':'पहले कौन-सा स्टॉक इस्तेमाल करें, जानें।',
+'Track batches, see expiry risk early, and issue stock by FEFO or FIFO. Your inventory is private to your signed-in account.':'स्टॉक जोड़ें, समाप्ति की तारीख देखें और ज़रूरत के अनुसार सामान निकालें। आपका डेटा आपके खाते में सुरक्षित रहता है।',
+'Add stock':'स्टॉक जोड़ें','Issue stock':'सामान निकालें','Inventory':'सारा स्टॉक','Expiry watch':'समाप्ति चेतावनी','Stock controls':'स्टॉक में बदलाव','Movements':'आवाजाही','Backup & restore':'बैकअप और वापस लाएँ',
+'On-hand quantity by unit':'कुल बचा सामान','Grouped by unit; never combined across units':'अलग-अलग इकाइयों में गिना गया','Items expiring soon':'जल्द समाप्त होने वाला सामान','Within your alert window':'चेतावनी की अवधि में','Expired batches':'समाप्त हो चुका सामान','Review before issuing':'इस्तेमाल से पहले जाँचें','Recent movements shown':'हाल के बदलाव','Latest 80 records; export CSV for full history':'पूरी सूची बैकअप में मिलेगी',
+'Receive a batch':'नया स्टॉक जोड़ें','Enter dates from the product label and keep one unit per item.':'पैकेट पर लिखी तारीख भरें। सामान चुनने से बाकी जानकारी अपने-आप आएगी।','New stock':'नया स्टॉक',
+'Batch ID *':'बैच नंबर *','Item name *':'सामान का नाम *','Quantity *':'कितनी मात्रा? *','Unit *':'इकाई *','Category':'सामान की श्रेणी','Supplier':'कहाँ से खरीदा?','Received date *':'मिलने की तारीख *','Expiry date *':'पैकेट पर समाप्ति तारीख *','Cost per unit (optional)':'एक इकाई की कीमत (ज़रूरी नहीं)','Notes':'अन्य जानकारी',
+'Save batch':'स्टॉक जोड़ें','Clear form':'फॉर्म साफ़ करें','Choose an expiry date to preview its status.':'पैकेट पर लिखी समाप्ति तारीख चुनें।','Issue stock':'सामान निकालें','FEFO uses earliest expiry first. Only eligible, unexpired stock is considered.':'पहले उसी सामान को निकालें जिसकी तारीख पहले खत्म होगी। समाप्त सामान नहीं निकलेगा।',
+'Transactional':'हिसाब दर्ज होगा','Item *':'सामान *','Choose an item…':'सामान चुनें…','Unit *':'इकाई *','Choose unit…':'इकाई चुनें…','Requested quantity *':'कितना निकालना है? *','Allocation policy':'किसे पहले निकालें','FEFO — earliest expiry':'FEFO — पहले समाप्त होने वाला','FIFO — earliest received':'FIFO — पहले आया','Reference (optional)':'रसीद/काम नंबर (ज़रूरी नहीं)','Notes (optional)':'कारण (ज़रूरी नहीं)','Allocate and issue':'सामान निकालें','Search batch ID, item, or supplier. Quantities are stored to 0.001 precision.':'नाम से सामान खोजें। मात्रा अपने आप सुरक्षित रखी जाती है।',
+'Search by item, batch ID, supplier, or category':'नाम या बैच से खोजें','Search item, batch, supplier…':'सामान खोजें…','All stock':'सारा स्टॉक','Expiring soon':'जल्द समाप्त होगा','Expired':'समाप्त','Zero quantity':'स्टॉक खत्म','Clear filters':'फ़िल्टर हटाएँ','Export CSV':'सूची डाउनलोड करें',
+'Prioritise these batches for review.':'इन सामानों की तारीख पहले जाँचें।','Prioritise these batches for review.':'इन सामानों की तारीख पहले जाँचें।','Stock controls':'स्टॉक में बदलाव','Adjust a selected batch with an audit reason.':'स्टॉक बदलने का कारण दर्ज करें।','Batch *':'बैच *','Choose a batch…':'बैच चुनें…','Action':'क्या करना है?','Receive more':'और जोड़ें','Remove quantity':'मात्रा घटाएँ','Expired write-off':'समाप्त सामान हटाएँ','Reason / notes *':'कारण *','Record adjustment':'बदलाव सेव करें','Alert preferences':'समाप्ति की चेतावनी','Warn before expiry (days)':'कितने दिन पहले चेतावनी दें','Save alert window':'चेतावनी सेव करें',
+'Recent movements':'हाल के बदलाव','Receive, issue and adjustments are recorded in the audit trail.':'स्टॉक जोड़ने, निकालने और बदलने का रिकॉर्ड यहाँ है।',
+'Backup & restore':'बैकअप और वापस लाएँ','Keep a JSON backup before importing or restoring records.':'बैकअप सेव करें ताकि बाद में रिकॉर्ड वापस ला सकें।','Download backup':'बैकअप डाउनलोड करें','Previous snapshot':'पिछला बैकअप','Restore a FreshTrack JSON backup':'FreshTrack बैकअप चुनें','Validate and restore':'जाँचकर वापस लाएँ','Restore replaces this account’s current inventory and movement history. A validated snapshot of the current state is saved before the restore transaction.':'बैकअप वापस लाने पर अभी का स्टॉक बदल जाएगा। पहले मौजूदा स्टॉक का बैकअप सुरक्षित होगा।',
+'Welcome back':'वापस स्वागत है','Sign in to manage stock, catch expiry dates early, and keep your inventory saved to your account.':'स्टॉक संभालने और तारीखें देखने के लिए लॉग इन करें। आपका डेटा खाते में सेव रहेगा।','Continue with Google':'Google से जारी रखें','or continue with email':'या ईमेल से जारी रखें','Email address':'ईमेल पता','Password':'पासवर्ड','Show':'दिखाएँ','Hide':'छिपाएँ','Sign in':'लॉग इन करें','New to FreshTrack? Create an account':'नया खाता बनाएँ','Create your account':'अपना खाता बनाएँ','Your inventory belongs to your account. Always check the expiry date on the product label before entering or issuing stock.':'आपका स्टॉक आपके खाते में सुरक्षित है। सामान जोड़ने से पहले पैकेट की तारीख जाँचें।',
+'In date':'तारीख सही','No stock':'स्टॉक खत्म','Expires today':'आज समाप्त','Clear':'ठीक है','No urgent expiry alerts':'अभी कोई ज़रूरी चेतावनी नहीं','No on-hand batches are expired or inside your current alert window.':'अभी किसी स्टॉक की तारीख समाप्त नहीं हुई है।',
+'Adjust':'बदलें','Archive':'हटाकर रखें','No batches match your search or filters. Select Clear filters to see all stock.':'इस खोज में सामान नहीं मिला। सारा स्टॉक देखने के लिए फ़िल्टर हटाएँ।','Your inventory is empty. Start with Add stock above to record your first batch.':'अभी कोई स्टॉक नहीं है। ऊपर से सामान जोड़ें।','No stock movements yet.':'अभी कोई बदलाव दर्ज नहीं है।',
+'Stock received':'स्टॉक आया','Stock issued':'स्टॉक निकला','Quantity added':'मात्रा बढ़ी','Quantity removed':'मात्रा घटी','Expired stock written off':'समाप्त स्टॉक हटाया','Optional details':'और जानकारी (ज़रूरी नहीं)','Settings':'सेटिंग्स','System':'डिवाइस की सेटिंग','Light':'दिन / हल्की थीम','Dark':'रात / डार्क थीम','Language':'भाषा','Hindi':'हिंदी','English':'English','Text size':'लिखाई का आकार','Comfortable':'सामान्य','Larger':'बड़ा','Easy mode':'आसान तरीका','Show advanced tools':'और विकल्प दिखाएँ','Hide advanced tools':'कम विकल्प दिखाएँ','Voice help':'बोलकर सहायता','Read instructions aloud':'निर्देश सुनें','Settings are saved on this device.':'ये सेटिंग्स इसी डिवाइस पर सेव रहेंगी।','Delete account permanently':'खाता हमेशा के लिए मिटाएँ','Choose what you are adding':'कौन-सा सामान जोड़ना है?','Tap a picture. Then enter the amount and the expiry date printed on the packet.':'सामान की तस्वीर/नाम चुनें। फिर मात्रा और पैकेट पर लिखी तारीख भरें।','Speak to add an item':'बोलकर सामान भरें','Read steps aloud':'निर्देश सुनें','Choose an item above to begin.':'शुरू करने के लिए ऊपर सामान चुनें।','Package expiry date':'पैकेट पर समाप्ति तारीख','Optional details (supplier, price, notes)':'और जानकारी (खरीद जगह, कीमत, नोट)','Account settings':'खाते की सेटिंग','Personalize how FreshTrack looks and works.':'FreshTrack को अपनी सुविधा के अनुसार बदलें।','Theme':'थीम','More settings':'और सेटिंग्स','Delete my account':'मेरा खाता मिटाएँ','Use device appearance':'डिवाइस की थीम अपनाएँ','Pick a product category':'सामान की श्रेणी चुनें','Read how to add stock':'स्टॉक जोड़ने का तरीका सुनें','Stock has been added.':'स्टॉक जोड़ दिया गया।','Enter the expiry date exactly as printed on the packet. Do not guess.':'पैकेट पर लिखी समाप्ति तारीख ही भरें। अंदाज़ा न लगाएँ।',
+'Rice':'चावल','Rice and grains':'चावल और अनाज','Lentils':'दाल','Pulses':'दालें','Flour':'आटा','Cooking essentials':'रसोई का सामान','Oil':'तेल','Sugar':'चीनी','Milk':'दूध','Dairy':'डेयरी','Vegetables':'सब्ज़ियाँ','Other':'अन्य','Choose this item':'यह सामान चुनें','Your settings':'आपकी सेटिंग्स','Delete account':'खाता मिटाएँ','Cancel':'रद्द करें','Type DELETE to confirm':'पक्का करने के लिए DELETE लिखें','This permanently deletes your account, inventory, movement history and backups. This cannot be undone. Download a backup first if you need one.':'इससे आपका खाता, पूरा स्टॉक, बदलाव का इतिहास और बैकअप हमेशा के लिए मिट जाएँगे। यह वापस नहीं हो सकता। ज़रूरत हो तो पहले बैकअप डाउनलोड करें।','Delete everything':'सब कुछ मिटाएँ','Account deletion':'खाता मिटाना','For safety, sign in again and delete your account within 15 minutes.':'सुरक्षा के लिए दोबारा लॉग इन करें, फिर 15 मिनट के अंदर खाता मिटाएँ।','Your account and inventory have been deleted.':'आपका खाता और स्टॉक मिटा दिया गया है।','Settings saved on this device.':'सेटिंग्स इस डिवाइस पर सेव हो गईं।'
+};
+const hiToEn={};for(const [en,hi] of Object.entries(enToHi)){if(!(hi in hiToEn))hiToEn[hi]=en}
+const items={
+rice:{en:'Rice',hi:'चावल',category:'Grains',unit:'kg',words:['rice','chawal','चावल','धान','grain','grains']},
+lentils:{en:'Lentils',hi:'दाल',category:'Pulses',unit:'kg',words:['lentils','lentil','dal','दाल','दालें','अरहर','मसूर','चना']},
+flour:{en:'Flour',hi:'आटा',category:'Grains',unit:'kg',words:['flour','atta','आटा','गेहूं','गेहूँ','आटे']},
+oil:{en:'Cooking oil',hi:'तेल',category:'Cooking essentials',unit:'litre',words:['oil','तेल','litre','liter','लिटर']},
+sugar:{en:'Sugar',hi:'चीनी',category:'Pantry',unit:'kg',words:['sugar','चीनी','नमक','salt','मसाला','spices']},
+milk:{en:'Milk',hi:'दूध',category:'Dairy',unit:'litre',words:['milk','दूध','दही','curd','yogurt']},
+vegetables:{en:'Vegetables',hi:'सब्ज़ियाँ',category:'Vegetables',unit:'kg',words:['vegetable','vegetables','सब्जी','सब्ज़ी','सब्जियां','आलू','प्याज','टमाटर']},
+other:{en:'Other item',hi:'अन्य सामान',category:'Other',unit:'units',words:['other','अन्य']}
+};
+const reverseItems={};for(const [k,v] of Object.entries(items)){v.words.forEach(w=>reverseItems[w.toLowerCase()]=k)}
+function todayIndia(){try{return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}catch{return new Date().toISOString().slice(0,10)}}
+function makeBatchCode(){const d=new Date();const stamp=todayIndia().replace(/-/g,'')+'-'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0')+String(d.getSeconds()).padStart(2,'0');let salt='';try{salt=crypto.getRandomValues(new Uint16Array(1))[0].toString(16).padStart(4,'0')}catch{salt=Math.random().toString(16).slice(2,6)}return 'FT-'+stamp+'-'+salt.toUpperCase()}
+function persist(){try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch{}}
+function resolveText(original){
+ const trimmed=original.trim();if(!trimmed)return original;
+ let result=trimmed;
+ if(prefs.language==='hi'){
+  if(enToHi[trimmed])result=enToHi[trimmed];
+  else if(/^Expires in (\d+)d$/.test(trimmed))result=trimmed.replace(/^Expires in (\d+)d$/,'$1 दिन में समाप्त');
+  else if(/^(\d+)d late$/.test(trimmed))result=trimmed.replace(/^(\d+)d late$/,'$1 दिन पहले समाप्त');
+  else if(/^(\d+)d left$/.test(trimmed))result=trimmed.replace(/^(\d+)d left$/,'$1 दिन बाकी');
+  else if(/^(\d+) active batches$/.test(trimmed))result=trimmed.replace(/^(\d+) active batches$/,'$1 सक्रिय बैच');
+  else if(/^(\d+) batches$/.test(trimmed))result=trimmed.replace(/^(\d+) batches$/,'$1 बैच');
+  else if(/^(\d+) alerts$/.test(trimmed))result=trimmed.replace(/^(\d+) alerts$/,'$1 चेतावनी');
+  else if(/^Expires in (\d+) day(s?)$/.test(trimmed))result=trimmed.replace(/^Expires in (\d+) day(s?)$/,'$1 दिन में समाप्त');
+  else if(/^Expiry preview: (\d+) day(s?) remaining\.$/.test(trimmed))result=trimmed.replace(/^Expiry preview: (\d+) day(s?) remaining\.$/,'$1 दिन बाकी हैं।');
+ }else{result=hiToEn[trimmed]||trimmed;result=result.replace(/^(\d+) दिन में समाप्त$/,'Expires in $1d').replace(/^(\d+) दिन पहले समाप्त$/,'$1d late').replace(/^(\d+) दिन बाकी$/,'$1d left').replace(/^(\d+) सक्रिय बैच$/,'$1 active batches').replace(/^(\d+) बैच$/,'$1 batches').replace(/^(\d+) चेतावनी$/,'$1 alerts').replace(/^(\d+) दिन बाकी हैं।$/,'Expiry preview: $1 days remaining.')}
+ const start=original.indexOf(trimmed);return original.slice(0,start)+result+original.slice(start+trimmed.length)
+}
+function translateAll(root=document.body){
+ if(!root||prefs.language!=='hi'&&prefs.language!=='en')return;
+ const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+ let node;while((node=walker.nextNode())){const parent=node.parentElement;if(!parent||parent.closest('script,style,textarea,[contenteditable="true"],[data-no-translate]'))continue;let base=originalText.has(node)?originalText.get(node):node.nodeValue;if(!originalText.has(node))originalText.set(node,base);const target=resolveText(base);if(node.nodeValue!==target)node.nodeValue=target}
+ applyInputTranslations();
+}
+function applyInputTranslations(){
+ const hi=prefs.language==='hi';
+ const attrs={email:[ 'आपका ईमेल','you@example.com'],password:['कम-से-कम 8 अक्षर','At least 8 characters'],search:['सामान या बैच खोजें…','Search item or batch…'],quantity:['जैसे 10','e.g. 10'],expiryDate:['पैकेट पर लिखी तारीख चुनें','Choose the printed date'],issueQty:['जितनी मात्रा चाहिए','Quantity to issue'],notes:['ज़रूरी हो तो लिखें','Optional notes'],itemName:['सामान का नाम','Item name'],batchCode:['अपने-आप बनेगा','Auto-generated']};
+ for(const [id,val] of Object.entries(attrs)){const node=$(id);if(node&&(!node.value||id==='password'||id==='search'))node.placeholder=val[hi?0:1]}
+ const toggle=$('togglePassword');if(toggle){toggle.setAttribute('aria-label',hi?(toggle.getAttribute('aria-pressed')==='true'?'पासवर्ड छिपाएँ':'पासवर्ड दिखाएँ'):(toggle.getAttribute('aria-pressed')==='true'?'Hide password':'Show password'))}
+ document.documentElement.lang=hi?'hi':'en';document.title=hi?'FreshTrack — आसान स्टॉक प्रबंधन':'FreshTrack — Expiry-aware inventory';
+}
+function applyTheme(){
+ const dark=prefs.theme==='dark'||(prefs.theme==='system'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+ document.documentElement.dataset.theme=dark?'dark':'light';document.documentElement.style.colorScheme=dark?'dark':'light';
+ document.body.classList.toggle('large-text',prefs.fontSize==='large');
+ document.body.classList.toggle('simple-mode',!!prefs.simpleMode);
+ document.body.classList.toggle('show-advanced',!!prefs.showAdvanced);
+ document.body.classList.toggle('voice-help-disabled',!prefs.voiceHelp);
+ document.body.classList.toggle('auth-open',!!($('authLayer')&&!$('authLayer').hidden));
+ const th=$('pref-theme'),la=$('pref-language'),fs=$('pref-textsize'),sm=$('pref-simple'),vh=$('pref-voice'),ad=$('pref-advanced');
+ if(th)th.value=prefs.theme;if(la)la.value=prefs.language;if(fs)fs.value=prefs.fontSize;if(sm)sm.checked=!!prefs.simpleMode;if(vh)vh.checked=!!prefs.voiceHelp;if(ad)ad.checked=!!prefs.showAdvanced;
+ updateAdvancedLabel();syncTriggers();syncDeleteVisibility();
+}
+function updateAdvancedLabel(){const b=$('easyAdvancedToggle');if(b)b.textContent=prefs.showAdvanced?(prefs.language==='hi'?'कम विकल्प दिखाएँ':'Hide advanced tools'):(prefs.language==='hi'?'और विकल्प दिखाएँ':'Show advanced tools')}
+function syncTriggers(){document.querySelectorAll('.easy-settings-trigger').forEach(b=>{b.setAttribute('aria-expanded',String(!!($('easySettingsPanel')&&!$('easySettingsPanel').hidden)));b.setAttribute('aria-label',prefs.language==='hi'?'सेटिंग्स खोलें':'Open settings')})}
+function syncDeleteVisibility(){const b=$('easyDeleteAccount');if(!b)return;let has=false;try{const s=JSON.parse(localStorage.getItem('freshtrack-session')||'null');has=!!(s&&s.access_token)}catch{}b.hidden=!has}
+function applyPreferences(){persist();applyTheme();translateAll();updateAdvancedLabel();const title=$('easyGuideTitle'),help=$('easyGuideHelp');if(title)title.textContent=prefs.language==='hi'?'कौन-सा सामान जोड़ना है?':'What are you adding?';if(help)help.textContent=prefs.language==='hi'?'नीचे सामान चुनें। फिर मात्रा और पैकेट पर लिखी समाप्ति तारीख भरें।':'Choose an item below, then enter the amount and the expiry date printed on its package.';const read=$('easyReadSteps');if(read)read.textContent=prefs.language==='hi'?'🔊 निर्देश सुनें':'🔊 Read steps aloud';const voice=$('easyVoiceEntry');if(voice)voice.textContent=prefs.language==='hi'?'🎙️ बोलकर भरें':'🎙️ Speak to fill';const status=$('easySelectedStatus');if(status&&!selectedItemKey)status.textContent=prefs.language==='hi'?'शुरू करने के लिए ऊपर सामान चुनें।':'Choose an item above to begin.';document.querySelectorAll('[data-easy-item]').forEach(b=>{const k=b.dataset.easyItem,x=items[k];const s=b.querySelector('strong'),small=b.querySelector('small');if(s&&x)s.textContent=x[prefs.language];if(small&&x)small.textContent=prefs.language==='hi'?({rice:'अनाज',lentils:'दालें',flour:'अनाज',oil:'रसोई',sugar:'रसोई',milk:'डेयरी',vegetables:'ताज़ा सामान',other:'दूसरा सामान'})[k]:({rice:'Grains',lentils:'Pulses',flour:'Grains',oil:'Kitchen',sugar:'Pantry',milk:'Dairy',vegetables:'Fresh food',other:'Other'})[k]});if(selectedItemKey&&$('itemName')){const x=items[selectedItemKey];if(x&&[$('itemName').dataset.easySelectedEn,$('itemName').dataset.easySelectedHi].includes($('itemName').value))$('itemName').value=x[prefs.language];if(x){$('itemName').dataset.easySelectedEn=x.en;$('itemName').dataset.easySelectedHi=x.hi}}}
+function setPreference(name,value){prefs[name]=value;applyPreferences()}
+function makeSettingsUi(){
+ const topActions=document.querySelector('.top-actions'),authLogo=document.querySelector('.authlogo');
+ if(!topActions||!authLogo)return;
+ const menu=document.createElement('section');menu.id='easySettingsPanel';menu.className='easy-settings-menu';menu.hidden=true;menu.setAttribute('role','dialog');menu.setAttribute('aria-labelledby','easySettingsTitle');
+ menu.innerHTML='<div class="easy-settings-head"><div><h2 id="easySettingsTitle">Settings</h2><p>Personalize how FreshTrack looks and works.</p></div><button type="button" id="easySettingsClose" class="easy-icon-button" aria-label="Close settings">×</button></div><label class="easy-setting-row" for="pref-theme"><span>Theme</span><select id="pref-theme"><option value="system">System / device</option><option value="light">Light / day</option><option value="dark">Dark / night</option></select></label><label class="easy-setting-row" for="pref-language"><span>Language</span><select id="pref-language"><option value="hi">हिंदी</option><option value="en">English</option></select></label><label class="easy-setting-row" for="pref-textsize"><span>Text size</span><select id="pref-textsize"><option value="normal">Comfortable</option><option value="large">Larger</option></select></label><label class="easy-check-row" for="pref-simple"><input id="pref-simple" type="checkbox"><span>Easy mode (fewer options, bigger actions)</span></label><label class="easy-check-row" for="pref-voice"><input id="pref-voice" type="checkbox"><span>Voice help</span></label><label class="easy-check-row" for="pref-advanced"><input id="pref-advanced" type="checkbox"><span>Show advanced tools</span></label><button id="easyReadSteps" class="btn easy-wide-button" type="button">🔊 Read steps aloud</button><button id="easyAdvancedToggle" class="btn easy-wide-button" type="button">Show advanced tools</button><div class="easy-settings-divider"></div><button id="easyDeleteAccount" class="btn warn easy-wide-button" type="button" hidden>Delete account permanently</button><p class="easy-settings-note">Settings are saved on this device.</p>';
+ document.body.append(menu);
+ const addTrigger=(parent,auth=false)=>{const b=document.createElement('button');b.type='button';b.className='btn easy-settings-trigger'+(auth?' easy-auth-trigger':'');b.innerHTML='<span aria-hidden="true">⋮</span>';b.setAttribute('aria-haspopup','dialog');b.setAttribute('aria-expanded','false');b.setAttribute('aria-label',prefs.language==='hi'?'सेटिंग्स खोलें':'Open settings');parent.append(b);b.addEventListener('click',e=>{e.stopPropagation();menu.hidden=!menu.hidden;syncTriggers();if(!menu.hidden){$('pref-theme').focus()}});};
+ const appTrigger=topActions.querySelector('.easy-settings-trigger');if(!appTrigger)addTrigger(topActions,false);
+ const authTrigger=authLogo.querySelector('.easy-settings-trigger');if(!authTrigger)addTrigger(authLogo,true);
+ $('easySettingsClose').addEventListener('click',()=>{menu.hidden=true;syncTriggers()});
+ document.addEventListener('pointerdown',e=>{if(menu.hidden)return;if(!menu.contains(e.target)&&!e.target.closest('.easy-settings-trigger')){menu.hidden=true;syncTriggers()}});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!menu.hidden){menu.hidden=true;syncTriggers()}const d=$('easyDeleteDialog');if(d&&d.open)d.close()}});
+ $('pref-theme').addEventListener('change',e=>setPreference('theme',e.target.value));
+ $('pref-language').addEventListener('change',e=>{const prev=prefs.language;prefs.language=e.target.value;if(selectedItemKey&&$('itemName')){const x=items[selectedItemKey];const input=$('itemName');if(input.value===x[prev])input.value=x[prefs.language];input.dataset.easySelectedEn=x.en;input.dataset.easySelectedHi=x.hi}applyPreferences()});
+ $('pref-textsize').addEventListener('change',e=>setPreference('fontSize',e.target.value));
+ $('pref-simple').addEventListener('change',e=>setPreference('simpleMode',e.target.checked));
+ $('pref-voice').addEventListener('change',e=>setPreference('voiceHelp',e.target.checked));
+ $('pref-advanced').addEventListener('change',e=>setPreference('showAdvanced',e.target.checked));
+ $('easyAdvancedToggle').addEventListener('click',()=>setPreference('showAdvanced',!prefs.showAdvanced));
+ $('easyReadSteps').addEventListener('click',readInstructions);
+ $('easyDeleteAccount').addEventListener('click',()=>{menu.hidden=true;syncTriggers();openDeleteDialog()});
+}
+function makeEasyAddUi(){
+ const panel=$('receive-stock'),form=$('batchForm');if(!panel||!form||panel.querySelector('.easy-quickstart'))return;
+ const quick=document.createElement('section');quick.className='easy-quickstart';quick.setAttribute('aria-labelledby','easyGuideTitle');
+ quick.innerHTML='<h3 id="easyGuideTitle">What are you adding?</h3><p id="easyGuideHelp">Choose an item below, then enter the amount and the expiry date printed on its package.</p><div class="easy-category-grid" role="group" aria-label="Choose a food category"><button type="button" class="easy-category" data-easy-item="rice" aria-pressed="false"><span class="easy-category-icon" aria-hidden="true">🌾</span><strong>Rice</strong><small>Grains</small></button><button type="button" class="easy-category" data-easy-item="lentils" aria-pressed="false"><span class="easy-category-icon" aria-hidden="true">🫘</span><strong>Lentils</strong><small>Pulses</small></button><button type="button" class="easy-category" data-easy-item="flour" aria-pressed="false"><span class="easy-category-icon" aria-hidden="true">🌾</span><strong>Flour</strong><small>Grains</small></button><button type="button" class="easy-category" data-easy-item="oil" aria-pressed="false"><span class="easy-category-icon" aria-hidden="true">🫗</span><strong>Oil</strong><small>Kitchen</small></button><button type="button" class="easy-category" data-easy-item="sugar" aria-pressed="false"><span class="easy-category-icon" aria-hidden="true">🧂</span><strong>Sugar</strong><small>Pantry</small></button><button type="button" class="easy-category" data-easy-item="milk" aria-pressed="false"><span class="easy-category-icon" aria-hidden="true">🥛</span><strong>Milk</strong><small>Dairy</small></button><button type="button" class="easy-category" data-easy-item="vegetables" aria-pressed="false"><span class="easy-category-icon" aria-hidden="true">🥦</span><strong>Vegetables</strong><small>Fresh food</small></button><button type="button" class="easy-category" data-easy-item="other" aria-pressed="false"><span class="easy-category-icon" aria-hidden="true">📦</span><strong>Other</strong><small>Other</small></button></div><div class="easy-guide-actions"><button id="easyVoiceEntry" type="button" class="btn">🎙️ Speak to fill</button><button id="easyReadGuide" type="button" class="btn">🔊 Read steps aloud</button></div><p id="easySelectedStatus" class="easy-selected-status" role="status" aria-live="polite">Choose an item above to begin.</p><p class="easy-important">Enter the expiry date exactly as printed on the packet. Do not guess.</p>';
+ const heading=panel.querySelector('.panelhead');heading.insertAdjacentElement('afterend',quick);
+ const categoryInput=$('category');if(categoryInput&&categoryInput.tagName==='INPUT'){const select=document.createElement('select');select.id='category';select.setAttribute('aria-label','Category');[['Grains','Grains'],['Pulses','Pulses'],['Cooking essentials','Cooking essentials'],['Pantry','Pantry'],['Dairy','Dairy'],['Vegetables','Vegetables'],['Other','Other']].forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;select.append(o)});categoryInput.replaceWith(select)}
+ const hiddenFields=['batchCode','receivedDate','category'];hiddenFields.forEach(id=>{const el=$(id);if(el&&el.closest('.field'))el.closest('.field').classList.add('easy-auto-field')});
+ const grid=form.querySelector('.formgrid');const fieldNodes=['supplier','cost','notes'].map(id=>$(id)).filter(Boolean).map(el=>el.closest('.field')).filter(Boolean);
+ if(grid&&fieldNodes.length){const details=document.createElement('details');details.className='easy-advanced-fields';const summary=document.createElement('summary');summary.textContent='Optional details (supplier, price, notes)';const inner=document.createElement('div');inner.className='formgrid easy-optional-grid';details.append(summary,inner);fieldNodes.forEach(f=>inner.append(f));grid.insertAdjacentElement('afterend',details)}
+ document.querySelectorAll('[data-easy-item]').forEach(button=>button.addEventListener('click',()=>selectItem(button.dataset.easyItem,true)));
+ $('easyVoiceEntry').addEventListener('click',startVoiceEntry);$('easyReadGuide').addEventListener('click',readInstructions);
+ const name=$('itemName');if(name)name.addEventListener('input',()=>{if(name.value.trim())ensureBatchCode();if(selectedItemKey&&name.value!==items[selectedItemKey][prefs.language]){selectedItemKey='';document.querySelectorAll('[data-easy-item]').forEach(b=>b.setAttribute('aria-pressed','false'))}});
+ const exp=$('expiryDate');if(exp){const lab=document.querySelector('label[for="expiryDate"]');if(lab){lab.textContent='Expiry date printed on the packet *';lab.dataset.easyOriginal='Expiry date *'}exp.setAttribute('aria-describedby','expiryPreview')}
+ setReceiveDefaults();
+}
+function setReceiveDefaults(){const received=$('receivedDate');if(received&&!received.value)received.value=todayIndia();const code=$('batchCode');if(code){code.autocomplete='off';code.setAttribute('aria-label','Automatically generated batch code')}}
+function ensureBatchCode(){const code=$('batchCode');if(code&&(!code.value||code.dataset.autoGenerated==='true')){code.value=makeBatchCode();code.dataset.autoGenerated='true'}const received=$('receivedDate');if(received&&!received.value)received.value=todayIndia()}
+function selectItem(key,focusQuantity){
+ const item=items[key];if(!item)return;selectedItemKey=key;
+ const name=$('itemName'),cat=$('category'),unit=$('unit');
+ if(name){name.value=item[prefs.language];name.dataset.easySelectedEn=item.en;name.dataset.easySelectedHi=item.hi}
+ if(cat)cat.value=item.category;if(unit)unit.value=item.unit;
+ ensureBatchCode();setReceiveDefaults();
+ document.querySelectorAll('[data-easy-item]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.easyItem===key)));
+ const status=$('easySelectedStatus');if(status)status.textContent=prefs.language==='hi'?item.hi+' चुना गया। अब मात्रा और पैकेट पर लिखी समाप्ति तारीख भरें।':item.en+' selected. Now enter the amount and the expiry date printed on the package.';
+ if(focusQuantity&&$('quantity'))$('quantity').focus();
+}
+function readInstructions(){
+ if(!prefs.voiceHelp)return announce(prefs.language==='hi'?'बोलकर सहायता सेटिंग में बंद है।':'Voice help is turned off in settings.');
+ if(!('speechSynthesis'in window)||!('SpeechSynthesisUtterance'in window))return announce(prefs.language==='hi'?'आपके ब्राउज़र में पढ़कर सुनाने की सुविधा नहीं है।':'Read-aloud is not supported by this browser.');
+ const message=prefs.language==='hi'?'सामान जोड़ने के लिए पहले चावल, दाल, आटा या दूसरी चीज़ चुनें। फिर मात्रा भरें। पैकेट पर लिखी समाप्ति तारीख चुनें। स्टॉक जोड़ें दबाएँ।':'To add stock, choose an item. Enter the amount and the expiry date printed on the package, then press Add stock.';
+ window.speechSynthesis.cancel();const utterance=new SpeechSynthesisUtterance(message);utterance.lang=prefs.language==='hi'?'hi-IN':'en-IN';utterance.rate=.9;window.speechSynthesis.speak(utterance);announce(message)
+}
+function announce(message,isError=false){let status=$('easyModeAnnounce');if(!status){status=document.createElement('div');status.id='easyModeAnnounce';status.className='easy-mode-toast';status.setAttribute('role','status');status.setAttribute('aria-live','polite');document.body.append(status)}status.textContent=message;status.classList.toggle('error',!!isError);status.hidden=false;clearTimeout(status._hideTimer);status._hideTimer=setTimeout(()=>{status.hidden=true},6000)}
+function startVoiceEntry(){
+ if(!prefs.voiceHelp)return announce(prefs.language==='hi'?'बोलकर सहायता सेटिंग में बंद है।':'Voice help is turned off in settings.');
+ const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!Recognition)return announce(prefs.language==='hi'?'इस ब्राउज़र में आवाज़ से भरना उपलब्ध नहीं है। नीचे सामान चुनकर मात्रा भरें।':'Voice entry is not supported by this browser. Choose an item and type its amount instead.');
+ const button=$('easyVoiceEntry');try{const recognition=new Recognition();activeRecognition=recognition;recognition.lang=prefs.language==='hi'?'hi-IN':'en-IN';recognition.interimResults=false;recognition.maxAlternatives=1;if(button){button.disabled=true;button.textContent=prefs.language==='hi'?'🎙️ सुन रहा है…':'🎙️ Listening…'}announce(prefs.language==='hi'?'जैसे बोलें: चावल दस किलो':'Say something like: rice ten kilos');
+ recognition.onresult=event=>{const phrase=String(event.results?.[0]?.[0]?.transcript||'').toLowerCase();const key=Object.keys(items).find(k=>items[k].words.some(w=>phrase.includes(w.toLowerCase())))||'other';selectItem(key,false);const numeric=phrase.match(/\d+(?:[.,]\d+)?/);const hindiNums={'एक':1,'दो':2,'तीन':3,'चार':4,'पाँच':5,'पांच':5,'छह':6,'सात':7,'आठ':8,'नौ':9,'दस':10,'ग्यारह':11,'बारह':12,'तेरह':13,'चौदह':14,'पंद्रह':15,'बीस':20,'आधा':.5,'आधी':.5};let qty=numeric?Number(numeric[0].replace(',','.')):null;if(qty===null){for(const [word,value] of Object.entries(hindiNums)){if(phrase.includes(word)){qty=value;break}}}if(qty!==null&&Number.isFinite(qty)&&qty>0)$('quantity').value=qty;let unit=$('unit').value;if(/\b(g|gram|grams)\b|ग्राम/.test(phrase))unit='g';else if(/\b(litre|liter|litres|liters|ltr)\b|लीटर/.test(phrase))unit='litre';else if(/\b(ml|millilitre|milliliter)\b|मिलीलीटर/.test(phrase))unit='ml';else if(/\b(pack|packet|packs|packets)\b|पैकेट/.test(phrase))unit='packs';else if(/\b(piece|pieces|unit|units)\b|पीस|नग/.test(phrase))unit='units';else if(/\b(kg|kilo|kilos|kilogram|kilograms)\b|किलो|किलोग्राम/.test(phrase))unit='kg';$('unit').value=unit;announce((prefs.language==='hi'?'आवाज़ से जानकारी भरी गई: ':'Voice filled: ')+phrase);if($('quantity'))$('quantity').focus()};
+ recognition.onerror=event=>announce(prefs.language==='hi'?'आवाज़ नहीं समझ आई या माइक्रोफ़ोन की अनुमति नहीं मिली। फिर कोशिश करें या बटन से सामान चुनें।':'Voice was not captured. Check microphone permission or select an item manually.',true);
+ recognition.onend=()=>{activeRecognition=null;if(button){button.disabled=false;button.textContent=prefs.language==='hi'?'🎙️ बोलकर भरें':'🎙️ Speak to fill'}};
+ recognition.start()
+ }catch{if(button)button.disabled=false;announce(prefs.language==='hi'?'माइक्रोफ़ोन शुरू नहीं हो सका। सामान चुनकर भरें।':'Could not start the microphone. Please select an item manually.',true)}
+}
+function openDeleteDialog(){
+ let dialog=$('easyDeleteDialog');if(dialog){if(typeof dialog.showModal==='function')dialog.showModal();return}
+ dialog=document.createElement('dialog');dialog.id='easyDeleteDialog';dialog.className='easy-delete-dialog';dialog.setAttribute('aria-labelledby','easyDeleteTitle');
+ dialog.innerHTML='<form method="dialog" class="easy-delete-card" data-no-translate><button type="button" id="easyDeleteClose" class="easy-icon-button easy-dialog-close" aria-label="Close">×</button><div class="easy-danger-icon" aria-hidden="true">!</div><h2 id="easyDeleteTitle">Delete account permanently</h2><p id="easyDeleteWarning">This permanently deletes your account, inventory, movement history and backups. This cannot be undone. Download a backup first if you need one.</p><label for="easyDeleteConfirm">Type DELETE to confirm</label><input id="easyDeleteConfirm" autocomplete="off" spellcheck="false" maxlength="6" placeholder="DELETE"><p id="easyDeleteStatus" role="status" aria-live="polite" class="easy-delete-status"></p><div class="easy-dialog-actions"><button id="easyDeleteCancel" type="button" class="btn">Cancel</button><button id="easyDeleteSubmit" type="button" class="btn warn" disabled>Delete everything</button></div></form>';
+ document.body.append(dialog);
+ const confirmInput=$('easyDeleteConfirm'),submit=$('easyDeleteSubmit');
+ confirmInput.addEventListener('input',()=>{submit.disabled=confirmInput.value!=='DELETE'});
+ $('easyDeleteClose').addEventListener('click',()=>dialog.close());$('easyDeleteCancel').addEventListener('click',()=>dialog.close());
+ submit.addEventListener('click',deleteAccount);
+ dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
+ dialog.showModal();setTimeout(()=>confirmInput.focus(),0);translateDeleteDialog();
+}
+function translateDeleteDialog(){const hi=prefs.language==='hi';const set=(id,en,h)=>{const e=$(id);if(e)e.textContent=hi?h:en};set('easyDeleteTitle','Delete account permanently','खाता हमेशा के लिए मिटाएँ');set('easyDeleteWarning','This permanently deletes your account, inventory, movement history and backups. This cannot be undone. Download a backup first if you need one.','इससे आपका खाता, पूरा स्टॉक, बदलाव का इतिहास और बैकअप हमेशा के लिए मिट जाएँगे। यह वापस नहीं हो सकता। ज़रूरत हो तो पहले बैकअप डाउनलोड करें।');const l=document.querySelector('label[for="easyDeleteConfirm"]');if(l)l.textContent=hi?'पक्का करने के लिए DELETE लिखें':'Type DELETE to confirm';$('easyDeleteConfirm').placeholder='DELETE';set('easyDeleteCancel','Cancel','रद्द करें');set('easyDeleteSubmit','Delete everything','सब कुछ मिटाएँ')}
+async function deleteAccount(){
+ const button=$('easyDeleteSubmit'),status=$('easyDeleteStatus');if($('easyDeleteConfirm').value!=='DELETE')return;
+ let stored=null;try{stored=JSON.parse(localStorage.getItem('freshtrack-session')||'null')}catch{}
+ const cfg=window.FRESHTRACK_CONFIG||{},base=String(cfg.supabaseUrl||'').replace(/\/+$/,''),key=cfg.publishableKey||'';
+ if(!stored?.access_token||!base||!key){status.textContent=prefs.language==='hi'?'पहले लॉग इन करें।':'Please sign in first.';return}
+ button.disabled=true;button.textContent=prefs.language==='hi'?'खाता मिट रहा है…':'Deleting account…';status.textContent=prefs.language==='hi'?'सर्वर पर सुरक्षित पुष्टि हो रही है…':'Waiting for secure server confirmation…';
+ try{
+  const response=await fetch(base+'/functions/v1/delete-account',{method:'POST',headers:{apikey:key,Authorization:'Bearer '+stored.access_token,'Content-Type':'application/json'},body:JSON.stringify({confirmation:'DELETE'})});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||data.deleted!==true){let message=data.error||'Account deletion could not be completed.';if(prefs.language==='hi'){if(/15 minutes|sign in again/i.test(message))message='सुरक्षा के लिए दोबारा लॉग इन करें, फिर 15 मिनट के अंदर खाता मिटाएँ।';else if(/invalid|session/i.test(message))message='आपका लॉग इन समाप्त हो गया है। दोबारा लॉग इन करें और फिर कोशिश करें।';else if(/not configured/i.test(message))message='खाता मिटाने की सुविधा सर्वर पर सेट नहीं है।';else message='खाता नहीं मिट पाया: '+message}throw new Error(message)}
+  try{localStorage.removeItem('freshtrack-session')}catch{}
+  status.textContent=prefs.language==='hi'?'आपका खाता और स्टॉक मिटा दिया गया है।':'Your account and inventory have been deleted.';
+  announce(status.textContent);setTimeout(()=>location.reload(),900)
+ }catch(err){status.textContent=String(err.message||err);button.disabled=false;button.textContent=prefs.language==='hi'?'सब कुछ मिटाएँ':'Delete everything'}
+}
+function observeAuthState(){
+ const app=$('app'),auth=$('authLayer');if(!app||!auth||!window.MutationObserver)return;
+ const obs=new MutationObserver(()=>{document.body.classList.toggle('auth-open',!auth.hidden);syncDeleteVisibility()});
+ obs.observe(app,{attributes:true,attributeFilter:['hidden']});obs.observe(auth,{attributes:true,attributeFilter:['hidden']});
+}
+function bindSystemTheme(){if(!window.matchMedia)return;const mq=window.matchMedia('(prefers-color-scheme: dark)');const handler=()=>{if(prefs.theme==='system')applyTheme()};if(mq.addEventListener)mq.addEventListener('change',handler);else if(mq.addListener)mq.addListener(handler)}
+function init(){makeSettingsUi();makeEasyAddUi();applyPreferences();bindSystemTheme();observeAuthState();translationObserver=new MutationObserver(records=>{if(records.some(r=>r.type==='childList'||r.type==='characterData'))translateAll()});translationObserver.observe(document.body,{subtree:true,childList:true,characterData:true});window.addEventListener('storage',e=>{if(e.key===PREF_KEY){prefs=readPrefs();applyPreferences()}});window.addEventListener('beforeunload',()=>{if(activeRecognition)try{activeRecognition.stop()}catch{}})}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
