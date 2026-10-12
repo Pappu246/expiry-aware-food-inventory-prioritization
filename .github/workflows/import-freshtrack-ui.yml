@@ -1,0 +1,52 @@
+name: Import and prepare FreshTrack cloud UI
+on:
+  push:
+    branches:
+      - freshtrack/unified-ui-google-auth
+    paths:
+      - "scripts/import_freshtrack_ui.py"
+      - ".github/workflows/import-freshtrack-ui.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: import-freshtrack-ui
+  cancel-in-progress: false
+
+jobs:
+  import-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out integration branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Import existing public FreshTrack UI and add Google OAuth entry
+        run: python3 scripts/import_freshtrack_ui.py
+      - name: Test the imported app and build static output
+        run: |
+          cd freshtrack-app
+          node --check app.js
+          node --check build.js
+          npm test
+          npm run build
+          node --check public/app.js
+      - name: Commit the verified source and supporting updates to this integration branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "FreshTrack sources already match the generated files."
+            exit 0
+          fi
+          git commit -m "feat: consolidate FreshTrack cloud UI and Google sign-in"
+          git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
