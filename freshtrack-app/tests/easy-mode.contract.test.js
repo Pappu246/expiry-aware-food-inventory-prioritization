@@ -62,3 +62,9 @@ test('Vercel permits only same-origin microphone use for voice controls',()=>{
  assert.match(header.value,/camera=\(\)/);
  assert.match(header.value,/geolocation=\(\)/);
 });
+
+
+test('Hindi localization includes rice category, pantry and everyday unit labels',()=>{
+ const js=read('easy-mode.js');
+ for(const pair of ["'Grains':'अनाज'","'Pantry':'राशन'","'Choose category':'श्रेणी चुनें'","'kg':'किलो (kg)'","'g':'ग्राम (g)'","'litre':'लीटर'","'ml':'मिलीलीटर'","'units':'पीस'","'packs':'पैकेट'","'boxes':'डिब्बे'"])assert.ok(js.includes(pair),pair);
+});
