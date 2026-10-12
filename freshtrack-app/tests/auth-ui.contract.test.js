@@ -92,3 +92,13 @@ test('network and inventory-load errors remain visible and actionable', () => {
   assert.match(app, /You are signed in, but your inventory could not load\./);
   assert.match(app, /msg\('authMsg',friendlyError\(err\),true\)/);
 });
+
+
+test('sign-in uses a main landmark and secondary text has accessible contrast styling', () => {
+  const html = read('index.html');
+  const css = read('styles.css');
+  assert.match(html, /<main class="authcard" aria-labelledby="authTitle">/);
+  assert.match(html, /<\/main><\/div><div id="toast"/);
+  assert.match(css, /--muted:#56685f/);
+  assert.match(css, /\.auth-divider\{[^}]*color:var\(--muted\)/);
+});
