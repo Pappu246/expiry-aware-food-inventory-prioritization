@@ -1,6 +1,10 @@
 # A-6 Project — Quick Start
 
-## Primary application: FreshTrack website
+## Cloud FreshTrack UI source (not yet deployed)
+
+Account-based FreshTrack source is in freshtrack-app/; it includes Google sign-in and Supabase-backed inventory workflows. This integration branch is not yet the production website. The old freshtrack-inventory.vercel.app project/domain is kept intact until the consolidated build is deployed and sign-in is smoke-tested. Payment processing is not wired yet; see freshtrack-app/PAYMENTS_READINESS.md.
+
+## Local application: FreshTrack website
 
 1. Extract the complete ZIP into a writable folder.
 2. Install Node.js 18 or later if it is not already installed. The website has no third-party runtime dependencies and requires no `npm install`.

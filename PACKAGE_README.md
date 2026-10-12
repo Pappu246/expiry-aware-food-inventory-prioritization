@@ -1,7 +1,7 @@
 # A-6 Project Submission Package
 
 **Project:** Expiry-Aware Food Inventory Prioritization Engine Using Data Structures  
-**Language:** C11 for the DSA engine; separate local-first Node.js website  
+**Language:** C11 for the DSA engine; local-first Node.js website and account-based FreshTrack cloud UI
 **Canonical repository:** https://github.com/Pappu246/expiry-aware-food-inventory-prioritization  
 **Canonical branch:** `main`
 
@@ -12,7 +12,7 @@ This package is refreshed from the selected Git branch by the [submission archiv
 - `A6_Project_Report.docx` and `A6_Project_Report.pdf` — report with abstract, background/literature context, method, measured results, limitations, references and appendices.
 - `A6_Project_Presentation.pptx` and `A6_Project_Presentation.pdf` — presentation for the project review.
 - `A6_Viva_Notes.docx` and `A6_Viva_Notes.pdf` — viva preparation.
-- `A6_Rubric_Alignment.md`, `CI_VERIFICATION.md`, `START_HERE.md`, `DEMO_GUIDE.md`, source code, tests, build scripts, website guides and benchmark protocol.
+- A6_Rubric_Alignment.md, CI_VERIFICATION.md, START_HERE.md, DEMO_GUIDE.md, C11 source, local website, the FreshTrack cloud UI in freshtrack-app/, tests, build scripts and benchmark protocol.
 - Data files: smoke simulation, raw FEFO/FIFO policy matrix, summary matrix, structure benchmark, benchmark summary and separate operation-count CSVs.
 - Figures and the supplied VGU A-6 notice/rubric PDF are preserved from the curated package.
 
@@ -22,7 +22,7 @@ The archive verifier requires the report, presentation and viva deliverables in 
 
 The C11 engine implements a custom binary Min-Heap for FEFO allocation, a hash table for batch ID lookup/duplicate prevention, an independent linear-scan FEFO correctness/performance baseline, and a separate FIFO policy experiment. The practical command-line app supports multiple item names, manual/CSV intake, FEFO/FIFO issue comparisons, expiry and low-stock views, transaction history, CSV export and local persistence.
 
-The optional website is a separate local-first Node.js application. It offers a dashboard, manual batch entry, search, FEFO/FIFO issue, expiry alerts, adjustments/write-offs, movement history, CSV import/export, JSON backup/restore and reporting. It currently uses a sort-based allocator rather than the C engine's Min-Heap. Website data under `website/data/` and C app data under `data/` are separate and do not synchronize.
+The optional website remains a separate local-first Node.js app with its own local JSON store. The account-based FreshTrack app under freshtrack-app/ preserves the deployed UI and Supabase-backed inventory workspace and adds a Google OAuth entry point. It does not synchronize with the C11 app/local website. A real payment gateway is not implemented or represented as working.
 
 ## Run on Windows
 

@@ -1,0 +1,8 @@
+{
+  "name": "freshtrack-inventory",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FreshTrack Inventory cloud application for expiry-aware FEFO/FIFO stock management.",
+  "scripts": { "build": "node build.js", "test": "node --test tests/*.test.js" },
+  "engines": { "node": ">=18" }
+}

@@ -5,7 +5,7 @@ Core research engine: C11 command-line prototype • Optional practical UI: loca
 
 ## What to show the faculty
 
-Use **VS Code + its integrated PowerShell terminal** for the main C11 DSA demonstration. The repository also contains a separate, optional local-first FreshTrack website and practical C inventory app. Lead with the C engine and measured DSA experiments for the academic rubric; show the website only as an additional usability interface, not as the implementation behind the C benchmark results.
+Use VS Code and its integrated PowerShell terminal for the main C11 DSA demonstration. The repo also contains the local-first website and cloud-authenticated FreshTrack UI source under freshtrack-app/. Lead with the C engine and measured DSA experiments; neither website's sort-based allocator backs the C benchmark. The cloud UI migration is staged separately and is not production-released by this branch.
 
 ### Before the presentation
 
