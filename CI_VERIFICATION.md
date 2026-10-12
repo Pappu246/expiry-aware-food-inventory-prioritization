@@ -5,7 +5,7 @@
 - Repository: https://github.com/Pappu246/expiry-aware-food-inventory-prioritization
 - Canonical source branch: `main`.
 - The live [C11 CI workflow history](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/workflows/ci.yml) is authoritative for the exact commit and result. This file is a guide, not a substitute for the run attached to the current branch head.
-- The latest verified source/test snapshot is commit `1ccb918872ce58cb042a73a0c881e7eb1249b7ab`, which passed [C11 CI run 38157834245](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38157834245), including the backup-recovery regression. The corresponding refreshed archive was validated in [archive run 38157834240](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38157834240). The subsequent main commit `d5bb47b42f33450073aa87bc7a128a075bbac0db` only refreshed the ZIP; check the live workflow history before citing later changes.
+- The latest verified source/test snapshot is commit `f6075349866e9bc32d8172e74a7e355ab5ae8b7f`, tested by [C11 CI run 38158044856](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38158044856). The same commit passed [archive validation run 38158044840](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38158044840), which validated the current submission ZIP. The later README-only deployment-status update does not change application source; the archive workflow will refresh the ZIP from current docs.
 
 ## Active C11 workflow
 
@@ -21,7 +21,7 @@ The current `.github/workflows/ci.yml` job runs on Ubuntu and performs:
 
 The latest verified C11 CI run reports: engine **13/13**, allocation-failure **14/14**, interactive-app smoke **6/6 grouped scenarios**, showcase **4/4**, ASan/UBSan **13/13**, and website **29/29**. The separate archive job validates the refreshed ZIP's paths and CRCs, the PDF/DOCX/PPTX container structure, the six core report/presentation/viva deliverables, and checks that key packaged source files exactly match the checked-out source.
 
-The active workflow does **not** configure a Clang/PowerShell job or a Node.js version matrix. Older local/CI notes about those checks are historical and should not be presented as steps in the current workflow. The current site is a local single-user app; successful source CI does not imply public hosting.
+The active workflow does **not** configure a Clang/PowerShell job or a Node.js version matrix. Older local/CI notes about those checks are historical and should not be presented as steps in the current workflow. The optional inventory website is a local single-user app; the separate static showcase is deployed on Vercel. Successful source CI does not itself verify public HTTP reachability.
 
 ## Submission archive integrity
 
@@ -46,4 +46,4 @@ Each timing row summarises seven measured trials after a warm-up on a GitHub-hos
 - The C11 program and local Node.js website use separate data stores; they do not synchronize inventory.
 - The website refuses non-loopback binding because it has no authentication and is not a production multi-user service.
 - The system helps rotate recorded stock. It does not certify food safety, track temperature/cold-chain conditions, or establish real-world waste reduction.
-- Deployment is tracked separately and is intentionally outside this code/package cleanup.
+- Static showcase production deployment `dpl_A7UMpsf4TSwPnDbXiY2K7EmZeMtE` reports `READY` for main commit `f6075349866e9bc32d8172e74a7e355ab5ae8b7f`. The optional inventory web server remains local-only because it has no authentication.

@@ -5,7 +5,7 @@
 ## Open the project
 
 - **Interactive showcase source:** [showcase/index.html](showcase/index.html) — client-side FEFO/FIFO demo committed in this repository.
-- **Hosted showcase:** https://expiry-aware-food-inventory-priorit.vercel.app/ — **deployment pending**. Do not treat this URL as live until a successful deployment is confirmed.
+- **Hosted showcase (production):** https://expiry-aware-food-inventory-priorit.vercel.app/ — Vercel reports deployment **READY** for commit `f6075349866e9bc32d8172e74a7e355ab5ae8b7f`. This is the static, client-only demo; the local inventory app is not deployed.
 - **GitHub source repository:** https://github.com/Pappu246/expiry-aware-food-inventory-prioritization
 - **C11 engine source:** [src/](src/)
 - **Interactive offline inventory app:** [src/inventory_app.c](src/inventory_app.c)
@@ -20,7 +20,7 @@
 - **Benchmark and experiment CSVs:** [CSV results in repository root](./)
 - **C11 CI workflow and run history:** [GitHub Actions](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/workflows/ci.yml)
 
-The source code, showcase, tests, benchmark outputs, guides and submission ZIP are committed to the GitHub repository. Hosting is a separate step: recent Vercel deployments have failed, and GitHub Pages could not be enabled by the repository's current Actions integration. The repository remains usable without hosting.
+The source code, showcase, tests, benchmark outputs, guides and submission ZIP are committed to the GitHub repository. The public showcase is deployed to Vercel from the `showcase/` directory; its current production deployment reports **READY** and the production alias is assigned to the deployment built from the main commit above. An external HTTP smoke test could not be completed from the execution environment because external DNS resolution was unavailable.
 
 ## Features
 
