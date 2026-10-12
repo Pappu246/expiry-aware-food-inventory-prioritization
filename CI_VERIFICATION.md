@@ -21,11 +21,17 @@ The current `.github/workflows/ci.yml` job runs on Ubuntu and performs:
 
 The latest verified C11 CI run reports: engine **13/13**, allocation-failure **14/14**, interactive-app smoke **6/6 grouped scenarios**, showcase **4/4**, ASan/UBSan **13/13**, and website **29/29**. The separate archive job validates the refreshed ZIP's paths and CRCs, the PDF/DOCX/PPTX container structure, the six core report/presentation/viva deliverables, and checks that key packaged source files exactly match the checked-out source.
 
-The active workflow does **not** configure a Clang/PowerShell job or a Node.js version matrix. Older local/CI notes about those checks are historical and should not be presented as steps in the current workflow. The optional inventory website is a local single-user app; the separate static showcase is deployed on Vercel. Successful source CI does not itself verify public HTTP reachability.
+The active workflow does **not** configure a Clang/PowerShell job or a Node.js version matrix. Older notes are historical and should not be presented as active steps. The local JSON inventory website is a single-user app; the static C11 showcase is a separate demo. Successful source CI does not itself verify public HTTP reachability.
 
 ## Submission archive integrity
 
 The dedicated [submission archive refresh workflow](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/workflows/refresh-submission-archive.yml) overlays current tracked source and documentation into `submission/A6_Submission_Artifacts.zip`, validates archive paths and CRCs, checks the required report/presentation/viva deliverables, and verifies that key source files inside the archive match the checked-out repository. Existing report PDFs/DOCX and presentation files are preserved and structurally checked; this automated check does not independently fact-check every sentence in those report documents.
+
+## FreshTrack cloud UI consolidation
+
+The integration branch adds the existing FreshTrack Inventory account UI under freshtrack-app/, a static build, and five Node.js contract tests. It includes Continue with Google and retains email/password authentication and existing cloud inventory workflows. Supabase publicly reported Google enabled and its authorize endpoint redirected to Google's OAuth screen; this is not a completed interactive sign-in smoke test.
+
+Production hostname cutover is deferred until the consolidated deployment is ready and smoke-tested.
 
 ## Benchmark snapshot
 

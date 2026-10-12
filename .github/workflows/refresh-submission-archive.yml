@@ -8,6 +8,7 @@ on:
       - "audit/**"
       - c11-clean-main-2026-10-11
       - c11-full-inventory-app-2026-10-11
+      - "freshtrack/**"
     paths-ignore:
       - "submission/A6_Submission_Artifacts.zip"
   workflow_dispatch:

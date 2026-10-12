@@ -29,6 +29,17 @@ CORE_SOURCE_FILES = (
     "website/lib/inventory.js",
     "website/public/index.html",
     "website/tests/server.integration.test.js",
+    "freshtrack-app/index.html",
+    "freshtrack-app/app.js",
+    "freshtrack-app/styles.css",
+    "freshtrack-app/config.js",
+    "freshtrack-app/package.json",
+    "freshtrack-app/build.js",
+    "freshtrack-app/vercel.json",
+    "freshtrack-app/.gitignore",
+    "freshtrack-app/README.md",
+    "freshtrack-app/tests/auth-ui.contract.test.js",
+    "FRESHTRACK_RELEASE_CHECKLIST.md",
     "Makefile",
     "CI_VERIFICATION.md",
     "PACKAGE_README.md",
@@ -186,6 +197,9 @@ def main() -> None:
             key = info.filename.rstrip("/")
             if key in existing:
                 fail(f"duplicate archive path before refresh: {key}")
+            # Remove a previously packaged payment note that is outside the agreed project scope.
+            if key.endswith("freshtrack-app/PAYMENTS_READINESS.md"):
+                continue
             # The submitted project is C11; discard stale Java build/source artifacts.
             if PurePosixPath(key).suffix.lower() in {".java", ".class"}:
                 removed_stale_language_files += 1

@@ -1,7 +1,7 @@
 name: C11 CI
 on:
   push:
-    branches: [main, dev, "audit/**", "c11-full-inventory-app-2026-10-11"]
+    branches: [main, dev, "audit/**", "c11-full-inventory-app-2026-10-11", "freshtrack/**"]
   pull_request:
     branches: [main, dev, "audit/**"]
   workflow_dispatch:
@@ -30,3 +30,33 @@ jobs:
         run: |
           cd website
           node --test tests/*.test.js
+      - name: FreshTrack cloud UI contract tests and static build
+        run: |
+          cd freshtrack-app
+          node --check app.js
+          node --check build.js
+          npm test
+          npm run build
+          node --check public/app.js
+      - name: Validate FreshTrack Vercel output and security headers
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const assert = require('node:assert/strict');
+          const config = JSON.parse(fs.readFileSync('freshtrack-app/vercel.json', 'utf8'));
+          assert.equal(config.outputDirectory, 'public');
+          const headerSet = config.headers.find((entry) => entry.source === '/(.*)').headers;
+          const headers = Object.fromEntries(headerSet.map((entry) => [entry.key.toLowerCase(), entry.value]));
+          assert.equal(headers['x-content-type-options'], 'nosniff');
+          assert.equal(headers['x-frame-options'], 'DENY');
+          assert.equal(headers['referrer-policy'], 'strict-origin-when-cross-origin');
+          assert.match(headers['content-security-policy'], /script-src 'self'/);
+          assert.match(headers['content-security-policy'], /connect-src 'self' https:\/\/lnpkoldlxcjypfgnqzix\.supabase\.co/);
+          assert.match(headers['content-security-policy'], /frame-ancestors 'none'/);
+          assert.doesNotMatch(headers['content-security-policy'], /script-src[^;]*unsafe-inline/);
+          const html = fs.readFileSync('freshtrack-app/public/index.html', 'utf8');
+          assert.match(html, /href="\/styles\.css"/);
+          assert.match(html, /src="\/config\.js"/);
+          assert.match(html, /src="\/app\.js"/);
+          console.log('FreshTrack Vercel output and security-header assertions: PASS');
+          NODE
