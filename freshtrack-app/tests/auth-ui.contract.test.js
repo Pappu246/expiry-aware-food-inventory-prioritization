@@ -10,7 +10,7 @@ const read = (name) => fs.readFileSync(path.join(root, name), 'utf8');
 test('FreshTrack page keeps core inventory UI and references local assets', () => {
   const html = read('index.html');
   assert.match(html, /<title>FreshTrack — Expiry-aware inventory<\/title>/);
-  for (const marker of ['id="app"', 'id="inventoryRows"', 'id="alerts"', 'id="issueForm"', 'id="adjustForm"', 'id="googleSignIn"', 'Continue with Google', 'id="authForm"', 'src="/config.js"', 'src="/app.js"', 'href="/styles.css"']) assert.ok(html.includes(marker), marker);
+  for (const marker of ['id="app"', 'id="inventoryRows"', 'id="alerts"', 'id="issueForm"', 'id="adjustForm"', 'id="googleSignIn"', 'Continue with Google', 'id="authForm"', 'id="togglePassword"', 'aria-controls="password"', 'aria-label="Show password"', 'src="/config.js"', 'src="/app.js"', 'href="/styles.css"']) assert.ok(html.includes(marker), marker);
 });
 
 test('Google button builds a Supabase Google authorization request', () => {
@@ -101,4 +101,22 @@ test('sign-in uses a main landmark and secondary text has accessible contrast st
   assert.match(html, /<\/main><\/div><div id="toast"/);
   assert.match(css, /--muted:#56685f/);
   assert.match(css, /\.auth-divider\{[^}]*color:var\(--muted\)/);
+});
+
+ 
+test('password visibility toggle is accessible and switches between hidden and visible modes', () => {
+  const html = read('index.html');
+  const app = read('app.js');
+  const css = read('styles.css');
+  assert.match(html, /<input id="password" type="password" autocomplete="current-password"/);
+  assert.match(html, /<button id="togglePassword" class="password-toggle" type="button"/);
+  assert.match(html, /aria-controls="password" aria-label="Show password" aria-pressed="false"/);
+  assert.match(html, /<span>Show<\/span><\/button>/);
+  assert.match(app, /\$\('togglePassword'\)\.addEventListener\('click'/);
+  assert.match(app, /field\.type=show\?'text':'password'/);
+  assert.match(app, /button\.setAttribute\('aria-pressed',String\(show\)\)/);
+  assert.match(app, /button\.setAttribute\('aria-label',show\?'Hide password':'Show password'\)/);
+  assert.match(app, /button\.querySelector\('span'\)\.textContent=show\?'Hide':'Show'/);
+  assert.match(css, /\.password-control\{position:relative/);
+  assert.match(css, /\.password-toggle:focus-visible/);
 });

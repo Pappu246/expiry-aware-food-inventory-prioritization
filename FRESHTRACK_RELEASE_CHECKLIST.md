@@ -14,7 +14,7 @@
 - Full CI: https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38250133282 — success.
 - Archive validation: https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38250132643 — success.
 - Production HTTP smoke: both homepages and `/app.js`, `/styles.css`, `/config.js` returned HTTP 200. Content Security Policy and standard security headers were present.
-- UI contract tests: 10/10; axe accessibility audit: 0 violations across sign-in mobile, dashboard desktop and dashboard mobile. Automated dashboard data used mocked inventory only.
+- UI contract tests: 11/11; password show/hide toggle added; axe accessibility audit: 0 violations across sign-in mobile, dashboard desktop and dashboard mobile. Automated dashboard data used mocked inventory only.
 - Supabase reports Google enabled. On both hostnames, the authorization preflight returned HTTP 302 to `accounts.google.com/o/oauth2/v2/auth`.
 
 ## Remaining verification caveats

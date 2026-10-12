@@ -29,7 +29,7 @@ The dedicated [submission archive refresh workflow](https://github.com/Pappu246/
 
 ## FreshTrack cloud UI consolidation
 
-The merged FreshTrack UI is in `freshtrack-app/`. Its **10/10 contract tests**, static build and Vercel security-header assertions pass in CI. A separate axe audit found **0 violations** on login-mobile, dashboard-desktop and dashboard-mobile. A headless browser check using mock inventory validated dashboard counts, search/clear filters, empty results, expiry filter, navigation and mobile layout with no page errors. These UI checks used fake inventory data and do not prove real-account CRUD.
+The merged FreshTrack UI is in `freshtrack-app/`. Its **11/11 contract tests**, static build and Vercel security-header assertions pass in CI. A separate axe audit found **0 violations** on login-mobile, dashboard-desktop and dashboard-mobile. A headless browser check using mock inventory validated dashboard counts, search/clear filters, empty results, expiry filter, navigation and mobile layout with no page errors. These UI checks used fake inventory data and do not prove real-account CRUD.
 
 Production deployment `dpl_EMGvTwVKg472sj5MoFSGTw8sjciX` is `READY`; both `expiry-aware-food-inventory-priorit.vercel.app` and `freshtrack-inventory.vercel.app` return HTTP 200 and serve the FreshTrack title, Google button, JS/CSS/config assets and security headers. Supabase reports Google enabled, and the authorize endpoint redirects both hostnames to `accounts.google.com`. Full interactive Google consent/return is still unverified.
 

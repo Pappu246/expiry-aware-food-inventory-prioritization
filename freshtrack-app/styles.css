@@ -29,3 +29,12 @@ html{scroll-behavior:smooth;scroll-padding-top:148px}
 @media(max-width:900px){.quicknav{top:64px;gap:6px}.quicknav a{min-height:42px;padding:9px 12px}}
 @media(max-width:520px){html{scroll-padding-top:124px}.quicknav{top:64px;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;padding:9px 0 11px;margin-bottom:15px;scrollbar-width:thin}.quicknav a{flex:0 0 auto;min-height:42px}.panelhead{gap:8px}.panelhead .badge{max-width:42%;white-space:normal;text-align:center}.formactions .btn{min-height:42px}.auth{overflow-y:auto;align-items:start;padding:14px}.authcard{margin:auto 0;width:min(440px,100%)}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+
+
+/* Accessible show/hide control for the account password field. */
+.password-control{position:relative;display:flex;align-items:center;min-width:0}
+.password-control input{padding-right:82px!important}
+.password-toggle{position:absolute;right:7px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:32px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:#f7faf7;color:var(--green);font-size:12px;font-weight:800;line-height:1;white-space:nowrap}
+.password-toggle svg{width:16px;height:16px;flex:0 0 16px}
+.password-toggle:hover{background:var(--green2);border-color:#9fb9ac}
+.password-toggle:focus-visible{outline:3px solid #5d9e82;outline-offset:2px}
