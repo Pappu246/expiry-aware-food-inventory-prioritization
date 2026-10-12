@@ -268,24 +268,6 @@ Rollback: if the consolidated release fails, restore the hostname to the previou
     change_line("DEMO_GUIDE.md", "Use **VS Code + its integrated PowerShell terminal**",
                 "Use VS Code and its integrated PowerShell terminal for the main C11 DSA demonstration. The repo also contains the local-first website and cloud-authenticated FreshTrack UI source under freshtrack-app/. Lead with the C engine and measured DSA experiments; neither website's sort-based allocator backs the C benchmark. The cloud UI migration is staged separately and is not production-released by this branch.")
 
-    change_line(".github/workflows/ci.yml", 'c11-full-inventory-app-2026-10-11"]',
-                'branches: [main, dev, "audit/**", "c11-full-inventory-app-2026-10-11", "freshtrack/**"]')
-    ci_text = docs[".github/workflows/ci.yml"]
-    old_step = "      - name: Website tests\n        run: |\n          cd website\n          node --test tests/*.test.js\n"
-    if ci_text.count(old_step) != 1:
-        raise RuntimeError("C11 CI website test step changed")
-    docs[".github/workflows/ci.yml"] = ci_text.replace(old_step, old_step +
-        "      - name: FreshTrack cloud UI contract tests and static build\n"
-        "        run: |\n"
-        "          cd freshtrack-app\n"
-        "          node --check app.js\n"
-        "          node --check build.js\n"
-        "          npm test\n"
-        "          npm run build\n"
-        "          node --check public/app.js\n", 1)
-    change_line(".github/workflows/refresh-submission-archive.yml",
-                "      - c11-full-inventory-app-2026-10-11",
-                '      - c11-full-inventory-app-2026-10-11\n      - "freshtrack/**"')
     arch_path = "scripts/refresh_submission_archive.py"
     arch_text = docs.get(arch_path, (ROOT / arch_path).read_text(encoding="utf-8"))
     old_core = '    "website/tests/server.integration.test.js",\n    "Makefile",'
