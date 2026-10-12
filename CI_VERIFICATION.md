@@ -5,7 +5,7 @@
 - Repository: https://github.com/Pappu246/expiry-aware-food-inventory-prioritization
 - Canonical source branch: `main`.
 - The live [C11 CI workflow history](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/workflows/ci.yml) is authoritative for the exact commit and result. This file is a guide, not a substitute for the run attached to the current branch head.
-- The latest verified source/test snapshot is commit `f6075349866e9bc32d8172e74a7e355ab5ae8b7f`, tested by [C11 CI run 38158044856](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38158044856). The same commit passed [archive validation run 38158044840](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38158044840), which validated the current submission ZIP. The later documentation-only deployment-status updates do not change application source; the archive workflow refreshes the ZIP from current documentation.
+- The consolidated FreshTrack UI is merged to `main` at `82d1dc36a8096beef302f24bec340233609f6e91`. [C11 CI run 38250133282](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38250133282) and [archive validation run 38250132643](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38250132643) both succeeded for that commit. The archive workflow checks ZIP paths/CRCs, required document containers and source-file parity.
 
 ## Active C11 workflow
 
@@ -29,9 +29,11 @@ The dedicated [submission archive refresh workflow](https://github.com/Pappu246/
 
 ## FreshTrack cloud UI consolidation
 
-The integration branch adds the existing FreshTrack Inventory account UI under freshtrack-app/, a static build, and five Node.js contract tests. It includes Continue with Google and retains email/password authentication and existing cloud inventory workflows. Supabase publicly reported Google enabled and its authorize endpoint redirected to Google's OAuth screen; this is not a completed interactive sign-in smoke test.
+The merged FreshTrack UI is in `freshtrack-app/`. Its **10/10 contract tests**, static build and Vercel security-header assertions pass in CI. A separate axe audit found **0 violations** on login-mobile, dashboard-desktop and dashboard-mobile. A headless browser check using mock inventory validated dashboard counts, search/clear filters, empty results, expiry filter, navigation and mobile layout with no page errors. These UI checks used fake inventory data and do not prove real-account CRUD.
 
-Production hostname cutover is deferred until the consolidated deployment is ready and smoke-tested.
+Production deployment `dpl_EMGvTwVKg472sj5MoFSGTw8sjciX` is `READY`; both `expiry-aware-food-inventory-priorit.vercel.app` and `freshtrack-inventory.vercel.app` return HTTP 200 and serve the FreshTrack title, Google button, JS/CSS/config assets and security headers. Supabase reports Google enabled, and the authorize endpoint redirects both hostnames to `accounts.google.com`. Full interactive Google consent/return is still unverified.
+
+The first Git-source Vercel deployment failed with `git_info_fail`; the live deployment was then built successfully by uploading the merged `freshtrack-app/` source with the configured Vercel build command. Future Git-based auto-deploys should be rechecked/reconnected before relying on automatic promotion.
 
 ## Benchmark snapshot
 
@@ -52,4 +54,4 @@ Each timing row summarises seven measured trials after a warm-up on a GitHub-hos
 - The C11 program and local Node.js website use separate data stores; they do not synchronize inventory.
 - The website refuses non-loopback binding because it has no authentication and is not a production multi-user service.
 - The system helps rotate recorded stock. It does not certify food safety, track temperature/cold-chain conditions, or establish real-world waste reduction.
-- Static showcase production deployment `dpl_A7UMpsf4TSwPnDbXiY2K7EmZeMtE` reports `READY` for main commit `f6075349866e9bc32d8172e74a7e355ab5ae8b7f`. The optional inventory web server remains local-only because it has no authentication.
+- Production now serves the account-based FreshTrack UI at both public hostnames above. The previous static-showcase deployment remains available as a rollback candidate but is no longer the active production alias. The optional local JSON inventory website remains local-only because it has no authentication.

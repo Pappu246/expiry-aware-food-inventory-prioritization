@@ -5,12 +5,13 @@
 ## Open the project
 
 - **Interactive showcase source:** [showcase/index.html](showcase/index.html) — client-side FEFO/FIFO demo committed in this repository.
-- **Current production URL (not yet migrated):** https://expiry-aware-food-inventory-priorit.vercel.app/ — this still serves the static C11 demo. The consolidated FreshTrack UI source is being prepared under freshtrack-app/; production cutover is deferred.
+- **Primary production URL:** https://expiry-aware-food-inventory-priorit.vercel.app/ — serves the consolidated FreshTrack Inventory cloud UI.
+- **Alternate FreshTrack URL:** https://freshtrack-inventory.vercel.app/ — currently routes to the same production deployment.
 - **GitHub source repository:** https://github.com/Pappu246/expiry-aware-food-inventory-prioritization
 - **C11 engine source:** [src/](src/)
 - **Interactive offline inventory app:** [src/inventory_app.c](src/inventory_app.c)
 - **Website source (local Node.js application):** website/
-- **Full FreshTrack cloud UI source:** freshtrack-app/ — the prior account-based UI, Supabase config, and Continue with Google entry point. This branch is not deployed to production yet.
+- **Full FreshTrack cloud UI source:** [freshtrack-app/](freshtrack-app/) — account-based dashboard, inventory, expiry alerts, FEFO/FIFO issuing, movements, reports, export/backup, Supabase config and Continue with Google.
 - **Project specification:** [PROJECT_SPEC.md](PROJECT_SPEC.md)
 - **Architecture:** [ARCHITECTURE.md](ARCHITECTURE.md)
 - **Benchmark methodology:** [BENCHMARK_PROTOCOL.md](BENCHMARK_PROTOCOL.md)
@@ -21,7 +22,7 @@
 - **Benchmark and experiment CSVs:** [CSV results in repository root](./)
 - **C11 CI workflow and run history:** [GitHub Actions](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/workflows/ci.yml)
 
-The core C11 engine, local apps, benchmark outputs, guides and submission ZIP remain in this repository. This integration branch adds the existing FreshTrack cloud UI source under freshtrack-app/. The production alias remains unchanged until this source passes CI and release smoke checks.
+The cloud UI is merged to `main` at `82d1dc36a8096beef302f24bec340233609f6e91` and deployed to Vercel as `dpl_EMGvTwVKg472sj5MoFSGTw8sjciX` (READY). Both public URLs above serve the same FreshTrack app. The original Vercel project has been renamed `freshtrack-inventory-legacy` and is retained for rollback.
 
 ## Features
 
@@ -31,7 +32,7 @@ The core C11 engine, local apps, benchmark outputs, guides and submission ZIP re
 - FIFO policy comparison using documented synthetic workloads.
 - Practical offline C inventory manager: receive batches, search, issue stock, expiry alerts, low-stock warnings, CSV import/export, settings and transaction log.
 - Optional local browser inventory website with isolated tests.
-- Account-based FreshTrack cloud UI with Supabase authentication and inventory workflows; this branch adds the Google OAuth button.
+- Account-based FreshTrack cloud UI with Supabase authentication, email/password and Continue with Google; production HTTP smoke and Google authorization redirect preflight passed. A real interactive Google consent/sign-in return has not been completed by automated tests.
 - Client-only C11 showcase demo;
 
 ## Build on Windows (PowerShell)
