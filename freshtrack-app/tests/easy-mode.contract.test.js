@@ -3,8 +3,13 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
+const vm=require('node:vm');
 const root=path.resolve(__dirname,'..');
 const read=name=>fs.readFileSync(path.join(root,name),'utf8');
+
+test('easy mode browser script parses as valid JavaScript',()=>{
+ assert.doesNotThrow(()=>new vm.Script(read('easy-mode.js'),{filename:'easy-mode.js'}));
+});
 
 test('easy mode assets are linked and included in the production build',()=>{
  const html=read('index.html'),build=read('build.js');
