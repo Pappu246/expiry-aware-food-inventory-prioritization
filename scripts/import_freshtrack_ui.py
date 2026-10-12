@@ -268,7 +268,7 @@ Rollback: if the consolidated release fails, restore the hostname to the previou
     change_line("DEMO_GUIDE.md", "Use **VS Code + its integrated PowerShell terminal**",
                 "Use VS Code and its integrated PowerShell terminal for the main C11 DSA demonstration. The repo also contains the local-first website and cloud-authenticated FreshTrack UI source under freshtrack-app/. Lead with the C engine and measured DSA experiments; neither website's sort-based allocator backs the C benchmark. The cloud UI migration is staged separately and is not production-released by this branch.")
 
-    change_line(".github/workflows/ci.yml", 'branches: [main, dev,',
+    change_line(".github/workflows/ci.yml", 'c11-full-inventory-app-2026-10-11"]',
                 'branches: [main, dev, "audit/**", "c11-full-inventory-app-2026-10-11", "freshtrack/**"]')
     ci_text = docs[".github/workflows/ci.yml"]
     old_step = "      - name: Website tests\n        run: |\n          cd website\n          node --test tests/*.test.js\n"
