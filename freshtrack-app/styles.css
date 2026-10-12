@@ -13,3 +13,19 @@
 .google-signin:focus-visible{outline:3px solid rgba(66,133,244,.25);outline-offset:2px}
 .auth-divider{display:flex;align-items:center;gap:12px;margin:0 0 14px;color:#87938b;font-size:11px}
 .auth-divider:before,.auth-divider:after{content:"";height:1px;background:#e4eae5;flex:1}
+
+
+/* Navigation and accessibility refinements for daily inventory workflows. */
+html{scroll-behavior:smooth;scroll-padding-top:148px}
+.skip-link{position:fixed;top:10px;left:10px;z-index:100;transform:translateY(-160%);padding:11px 15px;border-radius:10px;background:var(--ink);color:#fff;font-weight:800;text-decoration:none;box-shadow:var(--shadow)}
+.skip-link:focus{transform:translateY(0);outline:3px solid #84c5a7;outline-offset:3px}
+:where(a,button,input,select,textarea,[tabindex]):focus-visible{outline:3px solid #5d9e82;outline-offset:3px}
+.quicknav{position:sticky;top:72px;z-index:4;display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:10px 0;margin:0 0 20px;background:rgba(245,248,245,.97);border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}
+.quicknav a{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:9px 13px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);font-size:12px;font-weight:800;text-decoration:none;white-space:nowrap;transition:background .15s,border-color .15s}
+.quicknav a:hover,.quicknav a:focus-visible{background:var(--green2);border-color:#9fc4b1;color:var(--green)}
+#maincontent,#maincontent section[id]{scroll-margin-top:148px}
+#inventoryRows .empty{white-space:normal;line-height:1.6}
+.btn:focus-visible{transform:none}
+@media(max-width:900px){.quicknav{top:64px;gap:6px}.quicknav a{min-height:42px;padding:9px 12px}}
+@media(max-width:520px){html{scroll-padding-top:124px}.quicknav{top:64px;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;padding:9px 0 11px;margin-bottom:15px;scrollbar-width:thin}.quicknav a{flex:0 0 auto;min-height:42px}.panelhead{gap:8px}.panelhead .badge{max-width:42%;white-space:normal;text-align:center}.formactions .btn{min-height:42px}.auth{overflow-y:auto;align-items:start;padding:14px}.authcard{margin:auto 0;width:min(440px,100%)}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
