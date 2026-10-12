@@ -2,7 +2,7 @@
 
 ## Cloud FreshTrack UI source (not yet deployed)
 
-Account-based FreshTrack source is in freshtrack-app/; it includes Google sign-in and Supabase-backed inventory workflows. This integration branch is not yet the production website. The old freshtrack-inventory.vercel.app project/domain is kept intact until the consolidated build is deployed and sign-in is smoke-tested. Payment processing is not wired yet; see freshtrack-app/PAYMENTS_READINESS.md.
+Account-based FreshTrack source is in freshtrack-app/; it includes Google sign-in and Supabase-backed inventory workflows. This integration branch is not yet the production website. The old freshtrack-inventory.vercel.app project/domain is kept intact until the consolidated build is deployed and sign-in is smoke-tested.
 
 ## Local application: FreshTrack website
 
