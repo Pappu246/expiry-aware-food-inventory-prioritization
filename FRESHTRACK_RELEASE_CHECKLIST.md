@@ -4,8 +4,8 @@
 
 - Canonical GitHub repository: https://github.com/Pappu246/expiry-aware-food-inventory-prioritization
 - Merged PR: https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/pull/2
-- Deployed source commit: `82d1dc36a8096beef302f24bec340233609f6e91`
-- Vercel production deployment: `dpl_EMGvTwVKg472sj5MoFSGTw8sjciX` — READY
+- Latest Git-connected production source at final verification: `573873915df09393acc44d067469fd9ebb78aa99` (archive-only update after the merged UI commit)
+- Vercel production deployment for that source: `dpl_4CmD4upk9otLcNptp8Sj1NLV1ZG4` — READY
 - Vercel root: `freshtrack-app`; build command: `npm run build`; output: `public`
 - Main URL: https://expiry-aware-food-inventory-priorit.vercel.app/
 - FreshTrack URL: https://freshtrack-inventory.vercel.app/
@@ -20,7 +20,7 @@
 ## Remaining verification caveats
 
 - A real user's interactive Google consent and callback, plus read/add/issue against the real signed-in account, have not been completed in the automated environment.
-- Vercel's first Git-source deployment failed with `git_info_fail`; production is live using the tested merged source uploaded to Vercel and built successfully. Reconnect/repair Git-based automatic deployment before relying on push-to-production.
+- The initial Vercel Git build failed when the project root was inconsistent. The root is now `freshtrack-app`, the build command is `npm run build`, and the Git-connected deployment for the latest `main` commit completed successfully.
 - The FreshTrack hostname's alias now routes to the new deployment. Vercel still reports its project-domain registration under the renamed legacy project; adding it to the active project returned `duplicate-team-registration`. Do not delete the legacy project. If Vercel project-domain ownership must be fully rehomed in the dashboard, move the domain registration after checking the live alias still points to the current deployment.
 
 ## Rollback

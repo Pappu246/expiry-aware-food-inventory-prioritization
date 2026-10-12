@@ -2,7 +2,7 @@
 
 ## Cloud FreshTrack Inventory (deployed)
 
-Open [FreshTrack Inventory](https://freshtrack-inventory.vercel.app/) or the [Expiry-Aware production URL](https://expiry-aware-food-inventory-priorit.vercel.app/). Both currently serve the same production deployment (`dpl_EMGvTwVKg472sj5MoFSGTw8sjciX`) from the merged `main` source. The app includes Google sign-in, email/password, inventory, expiry alerts, FEFO/FIFO issuing, movements, reports and backup/restore. The old Vercel project is now named `freshtrack-inventory-legacy` and is kept for rollback.
+Open [FreshTrack Inventory](https://freshtrack-inventory.vercel.app/) or the [Expiry-Aware production URL](https://expiry-aware-food-inventory-priorit.vercel.app/). Both currently serve the same Git-connected production deployment from `main`. The app includes Google sign-in, email/password, inventory, expiry alerts, FEFO/FIFO issuing, movements, reports and backup/restore. The old Vercel project is now named `freshtrack-inventory-legacy` and is kept for rollback.
 
 Supabase reports Google enabled and both hostnames redirect to Google's authorization page. The final interactive Google consent and signed-in inventory workflow still need one real-account smoke test; do not mistake the preflight redirect for a completed login.
 

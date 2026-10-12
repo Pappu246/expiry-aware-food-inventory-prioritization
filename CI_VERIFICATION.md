@@ -33,7 +33,7 @@ The merged FreshTrack UI is in `freshtrack-app/`. Its **10/10 contract tests**, 
 
 Production deployment `dpl_EMGvTwVKg472sj5MoFSGTw8sjciX` is `READY`; both `expiry-aware-food-inventory-priorit.vercel.app` and `freshtrack-inventory.vercel.app` return HTTP 200 and serve the FreshTrack title, Google button, JS/CSS/config assets and security headers. Supabase reports Google enabled, and the authorize endpoint redirects both hostnames to `accounts.google.com`. Full interactive Google consent/return is still unverified.
 
-The first Git-source Vercel deployment failed with `git_info_fail`; the live deployment was then built successfully by uploading the merged `freshtrack-app/` source with the configured Vercel build command. Future Git-based auto-deploys should be rechecked/reconnected before relying on automatic promotion.
+The initial Git-source deployment attempt failed because the configured root directory was mismatched. After the `freshtrack-app` root and `npm run build` settings were aligned, the Git-connected production deployment for main commit `573873915df09393acc44d067469fd9ebb78aa99` completed successfully as `READY` on `dpl_4CmD4upk9otLcNptp8Sj1NLV1ZG4`. This confirms the linked Git-to-Vercel main deployment path is working again.
 
 ## Benchmark snapshot
 

@@ -22,7 +22,7 @@
 - **Benchmark and experiment CSVs:** [CSV results in repository root](./)
 - **C11 CI workflow and run history:** [GitHub Actions](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/workflows/ci.yml)
 
-The cloud UI is merged to `main` at `82d1dc36a8096beef302f24bec340233609f6e91` and deployed to Vercel as `dpl_EMGvTwVKg472sj5MoFSGTw8sjciX` (READY). Both public URLs above serve the same FreshTrack app. The original Vercel project has been renamed `freshtrack-inventory-legacy` and is retained for rollback.
+The cloud UI is merged on `main` and is deployed by the linked Vercel project. Both public URLs above route to the same current production deployment and serve the same FreshTrack app. The Git-connected production deployment for main commit `573873915df09393acc44d067469fd9ebb78aa99` was verified `READY` after the archive-only refresh. The original Vercel project has been renamed `freshtrack-inventory-legacy` and is retained for rollback.
 
 ## Features
 
