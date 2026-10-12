@@ -22,7 +22,7 @@ The archive verifier requires the report, presentation and viva deliverables in 
 
 The C11 engine implements a custom binary Min-Heap for FEFO allocation, a hash table for batch ID lookup/duplicate prevention, an independent linear-scan FEFO correctness/performance baseline, and a separate FIFO policy experiment. The practical command-line app supports multiple item names, manual/CSV intake, FEFO/FIFO issue comparisons, expiry and low-stock views, transaction history, CSV export and local persistence.
 
-The optional website remains a separate local-first Node.js app with its own local JSON store. The account-based FreshTrack app under freshtrack-app/ preserves the deployed UI and Supabase-backed inventory workspace and adds a Google OAuth entry point. It does not synchronize with the C11 app/local website. A real payment gateway is not implemented or represented as working.
+The optional website remains a separate local-first Node.js app with its own local JSON store. The account-based FreshTrack app under freshtrack-app/ preserves the deployed UI and Supabase-backed inventory workspace and adds a Google OAuth entry point. It does not synchronize with the C11 app/local website.
 
 ## Run on Windows
 
