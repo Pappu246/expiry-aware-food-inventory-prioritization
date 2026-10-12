@@ -31,7 +31,7 @@ The dedicated [submission archive refresh workflow](https://github.com/Pappu246/
 
 The integration branch adds the existing FreshTrack Inventory account UI under freshtrack-app/, a static build, and five Node.js contract tests. It includes Continue with Google and retains email/password authentication and existing cloud inventory workflows. Supabase publicly reported Google enabled and its authorize endpoint redirected to Google's OAuth screen; this is not a completed interactive sign-in smoke test.
 
-No payment gateway or paid-plan enforcement existed in the previous app. Real checkout requires a chosen provider, price/cadence, server-side credentials, signature/webhook verification, and persisted entitlements. Production hostname cutover is deferred until the consolidated deployment is ready and smoke-tested.
+Production hostname cutover is deferred until the consolidated deployment is ready and smoke-tested.
 
 ## Benchmark snapshot
 
