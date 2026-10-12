@@ -251,7 +251,7 @@ Rollback: if the consolidated release fails, restore the hostname to the previou
 
     change_line("PACKAGE_README.md", "**Language:**",
                 "**Language:** C11 for the DSA engine; local-first Node.js website and account-based FreshTrack cloud UI")
-    change_line("PACKAGE_README.md", "A6_Rubric_Alignment.md,",
+    change_line("PACKAGE_README.md", "A6_Rubric_Alignment.md",
                 "- A6_Rubric_Alignment.md, CI_VERIFICATION.md, START_HERE.md, DEMO_GUIDE.md, C11 source, local website, the FreshTrack cloud UI in freshtrack-app/, tests, build scripts and benchmark protocol.")
     change_line("PACKAGE_README.md", "The optional website is a separate local-first Node.js application.",
                 "The optional website remains a separate local-first Node.js app with its own local JSON store. The account-based FreshTrack app under freshtrack-app/ preserves the deployed UI and Supabase-backed inventory workspace and adds a Google OAuth entry point. It does not synchronize with the C11 app/local website. A real payment gateway is not implemented or represented as working.")
