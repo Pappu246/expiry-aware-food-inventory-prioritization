@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = __dirname;
 const output = path.join(root, 'public');
-const sources = ['index.html', 'app.js', 'styles.css', 'config.js'];
+const sources = ['index.html', 'app.js', 'styles.css', 'config.js', 'easy-mode.js', 'easy-mode.css'];
 fs.rmSync(output, { recursive: true, force: true });
 fs.mkdirSync(output, { recursive: true });
 for (const name of sources) {
