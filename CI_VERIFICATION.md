@@ -5,7 +5,7 @@
 - Repository: https://github.com/Pappu246/expiry-aware-food-inventory-prioritization
 - Canonical source branch: `main`.
 - The live [C11 CI workflow history](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/workflows/ci.yml) is authoritative for the exact commit and result. This file is a guide, not a substitute for the run attached to the current branch head.
-- The latest verified source/test snapshot is commit `f6075349866e9bc32d8172e74a7e355ab5ae8b7f`, tested by [C11 CI run 38158044856](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38158044856). The same commit passed [archive validation run 38158044840](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38158044840), which validated the current submission ZIP. The later README-only deployment-status update does not change application source; the archive workflow will refresh the ZIP from current docs.
+- The latest verified source/test snapshot is commit `f6075349866e9bc32d8172e74a7e355ab5ae8b7f`, tested by [C11 CI run 38158044856](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38158044856). The same commit passed [archive validation run 38158044840](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/runs/38158044840), which validated the current submission ZIP. The later documentation-only deployment-status updates do not change application source; the archive workflow refreshes the ZIP from current documentation.
 
 ## Active C11 workflow
 
