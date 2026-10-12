@@ -38,7 +38,7 @@ body.auth-open .easy-settings-menu{top:14px;max-height:calc(100dvh - 28px);z-ind
 .easy-advanced-fields{margin-top:14px;border:1px solid var(--line);border-radius:11px;padding:10px 12px}
 .easy-advanced-fields summary{cursor:pointer;min-height:32px;display:flex;align-items:center;font-size:13px;font-weight:800;color:var(--ink)}
 .easy-optional-grid{margin-top:10px}
-body.simple-mode .easy-auto-field{display:none!important}
+body.simple-mode:not(.show-advanced) .easy-auto-field{display:none!important}
 body.simple-mode:not(.show-advanced) #stock-controls,body.simple-mode:not(.show-advanced) #movement-history,body.simple-mode:not(.show-advanced) #backup-restore{display:none!important}
 body.simple-mode:not(.show-advanced) .quicknav a[href="#stock-controls"],body.simple-mode:not(.show-advanced) .quicknav a[href="#movement-history"],body.simple-mode:not(.show-advanced) .quicknav a[href="#backup-restore"]{display:none}
 body.simple-mode .grid{grid-template-columns:minmax(0,1fr)}

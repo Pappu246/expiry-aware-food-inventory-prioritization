@@ -26,7 +26,7 @@ test('simple add flow offers one-tap categories and rice maps to grains',()=>{
  assert.match(js,/ensureBatchCode\(\)/);
  assert.match(js,/received\.value=todayIndia\(\)/);
  assert.match(css,/\.easy-category-grid\{display:grid/);
- assert.match(css,/body\.simple-mode \.easy-auto-field/);
+ assert.match(css,/body\.simple-mode:not\(\.show-advanced\) \.easy-auto-field/);
 });
 
 test('personalization supports system, light and dark themes, Hindi/English and larger text',()=>{
