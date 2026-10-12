@@ -84,3 +84,7 @@ body.large-text .easy-category{min-height:122px}
 @media(max-width:620px){.easy-category-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.easy-category{min-height:92px}.easy-category-icon{font-size:27px}.easy-settings-menu{right:8px;width:calc(100vw - 16px);max-height:calc(100dvh - 28px);top:14px}.easy-setting-row{grid-template-columns:minmax(0,1fr) minmax(130px,1.05fr)}.easy-delete-card{padding:21px}.easy-dialog-actions .btn{flex:1}}
 @media(min-width:901px){body.simple-mode .grid{grid-template-columns:minmax(0,1fr)}}
 @media(prefers-reduced-motion:reduce){.easy-category{transition:none}}
+
+/* Keep account actions inside the three-dot settings panel. */
+.easy-account-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:8px 0}
+.easy-account-actions .easy-account-action{width:100%;min-height:46px;margin:0;justify-content:center}
