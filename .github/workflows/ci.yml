@@ -1,7 +1,7 @@
 name: C11 CI
 on:
   push:
-    branches: [main, dev, "audit/**", "c11-full-inventory-app-2026-10-11"]
+    branches: [main, dev, "audit/**", "c11-full-inventory-app-2026-10-11", "freshtrack/**"]
   pull_request:
     branches: [main, dev, "audit/**"]
   workflow_dispatch:
@@ -30,3 +30,11 @@ jobs:
         run: |
           cd website
           node --test tests/*.test.js
+      - name: FreshTrack cloud UI contract tests and static build
+        run: |
+          cd freshtrack-app
+          node --check app.js
+          node --check build.js
+          npm test
+          npm run build
+          node --check public/app.js
