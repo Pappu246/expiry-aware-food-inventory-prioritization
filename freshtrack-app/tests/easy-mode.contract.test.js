@@ -99,7 +99,7 @@ test('clear previous data UI requires explicit confirmation and calls the accoun
  assert.match(js,/confirmInput\.value!=='CLEAR'/);
  assert.match(js,/freshtrack_clear_inventory/);
  assert.match(js,/p_confirmation:'CLEAR'/);
- assert.match(js,/stored\\?\.access_token|stored\\.access_token/);
+ assert.match(js,/stored\?\.access_token/);
  assert.match(js,/Download backup first/);
 });
 
