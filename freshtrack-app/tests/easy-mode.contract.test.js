@@ -90,3 +90,26 @@ test('Hindi voice mode parses Hindi digits and quantities without silently class
  assert.match(js,/पच्चीस/);
  assert.match(js,/I could not identify the item/);
 });
+
+
+test('clear previous data UI requires explicit confirmation and calls the account-scoped RPC',()=>{
+ const js=read('easy-mode.js');
+ assert.match(js,/id="easyClearInventory"/);
+ assert.match(js,/id="easyClearDataDialog"/);
+ assert.match(js,/confirmInput\.value!=='CLEAR'/);
+ assert.match(js,/freshtrack_clear_inventory/);
+ assert.match(js,/p_confirmation:'CLEAR'/);
+ assert.match(js,/authorization required|authentication required/i);
+ assert.match(js,/Download backup first/);
+});
+
+test('clear previous data is not account deletion and uses the signed-in session token',()=>{
+ const js=read('easy-mode.js');
+ const start=js.indexOf('async function clearInventoryData()');
+ const end=js.indexOf('function dialogCloseSafe',start);
+ const section=js.slice(start,end);
+ assert.ok(start>=0&&end>start);
+ assert.match(section,/stored\.access_token/);
+ assert.match(section,/data\?\.cleared!==true/);
+ assert.doesNotMatch(section,/auth\.admin\.deleteUser|delete-account/);
+});
