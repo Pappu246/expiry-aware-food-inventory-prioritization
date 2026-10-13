@@ -88,3 +88,7 @@ body.large-text .easy-category{min-height:122px}
 /* Keep account actions inside the three-dot settings panel. */
 .easy-account-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:8px 0}
 .easy-account-actions .easy-account-action{width:100%;min-height:46px;margin:0;justify-content:center}
+
+/* Separate, account-scoped clearing action in Settings. */
+#easyClearInventory{border-style:solid;border-color:var(--red);}
+#easyClearInventory[hidden]{display:none!important}
