@@ -95,7 +95,7 @@ test('Hindi voice mode parses Hindi digits and quantities without silently class
 test('clear previous data UI requires explicit confirmation and calls the account-scoped RPC',()=>{
  const js=read('easy-mode.js');
  assert.match(js,/id="easyClearInventory"/);
- assert.match(js,/id="easyClearDataDialog"/);
+ assert.match(js,/dialog\.id='easyClearDataDialog'/);
  assert.match(js,/confirmInput\.value!=='CLEAR'/);
  assert.match(js,/freshtrack_clear_inventory/);
  assert.match(js,/p_confirmation:'CLEAR'/);
