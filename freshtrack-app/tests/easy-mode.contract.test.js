@@ -99,7 +99,7 @@ test('clear previous data UI requires explicit confirmation and calls the accoun
  assert.match(js,/confirmInput\.value!=='CLEAR'/);
  assert.match(js,/freshtrack_clear_inventory/);
  assert.match(js,/p_confirmation:'CLEAR'/);
- assert.match(js,/authorization required|authentication required/i);
+ assert.match(js,/stored\\?\.access_token|stored\\.access_token/);
  assert.match(js,/Download backup first/);
 });
 
@@ -112,4 +112,17 @@ test('clear previous data is not account deletion and uses the signed-in session
  assert.match(section,/stored\.access_token/);
  assert.match(section,/data\?\.cleared!==true/);
  assert.doesNotMatch(section,/auth\.admin\.deleteUser|delete-account/);
+});
+
+
+test('clear inventory database migration is strictly scoped to auth.uid and explicit confirmation',()=>{
+ const migration=fs.readFileSync(path.resolve(root,'../supabase/migrations/20261013130000_add_user_scoped_inventory_clear.sql'),'utf8');
+ assert.match(migration,/security definer/i);
+ assert.match(migration,/auth\.uid\(\)/);
+ assert.match(migration,/p_confirmation is distinct from 'CLEAR'/);
+ assert.match(migration,/delete from public\.freshtrack_movements where user_id = v_user_id/i);
+ assert.match(migration,/delete from public\.freshtrack_batches where user_id = v_user_id/i);
+ assert.match(migration,/delete from public\.freshtrack_backup_snapshots where user_id = v_user_id/i);
+ assert.match(migration,/grant execute on function public\.freshtrack_clear_inventory\(text\) to authenticated/i);
+ assert.doesNotMatch(migration,/delete from auth\.users/i);
 });
