@@ -116,7 +116,7 @@ test('clear previous data is not account deletion and uses the signed-in session
 
 
 test('clear inventory database migration is strictly scoped to auth.uid and explicit confirmation',()=>{
- const migration=fs.readFileSync(path.resolve(root,'../supabase/migrations/20261013130000_add_user_scoped_inventory_clear.sql'),'utf8');
+ const migration=fs.readFileSync(path.resolve(root,'../supabase/migrations/20261013083930_add_user_scoped_inventory_clear.sql'),'utf8');
  assert.match(migration,/security definer/i);
  assert.match(migration,/auth\.uid\(\)/);
  assert.match(migration,/p_confirmation is distinct from 'CLEAR'/);
