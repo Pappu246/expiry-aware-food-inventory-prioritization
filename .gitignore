@@ -10,6 +10,17 @@
 /website/data/inventory.json
 /website/data/*.tmp
 
+# Local SQLite databases and transient journal files — may contain private inventory data
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+/backend/database/*.db
+/backend/database/*.sqlite
+/backend/database/*.sqlite3
+
 # Local tooling
 .DS_Store
 Thumbs.db
