@@ -2,15 +2,20 @@
 
 **C11 Data Structures & Algorithms project** — a custom binary Min-Heap for FEFO stock allocation, a hash table for batch ID lookup, an independent linear-scan FEFO baseline and a separate FIFO policy experiment.
 
+## Open FreshTrack now
+
+- **[Open FreshTrack Inventory — primary production link](https://expiry-aware-food-inventory-priorit.vercel.app/)**
+- **[Open FreshTrack Inventory — alternate direct link](https://freshtrack-inventory.vercel.app/)**
+
+Both links currently point to the same ready production deployment. Use the primary link as the canonical address; after future deployments, the alternate alias may need to be reassigned to the newest release.
+
 ## Open the project
 
 - **Interactive showcase source:** [showcase/index.html](showcase/index.html) — client-side FEFO/FIFO demo committed in this repository.
-- **Primary production URL:** https://expiry-aware-food-inventory-priorit.vercel.app/ — serves the consolidated FreshTrack Inventory cloud UI.
-- **Secondary FreshTrack alias:** https://freshtrack-inventory.vercel.app/ — may not automatically follow future production deployments; use the primary URL above for the canonical release.
 - **GitHub source repository:** https://github.com/Pappu246/expiry-aware-food-inventory-prioritization
 - **C11 engine source:** [src/](src/)
 - **Interactive offline inventory app:** [src/inventory_app.c](src/inventory_app.c)
-- **Website source (local Node.js application):** website/
+- **Website source (local Node.js application):** [website/](website/)
 - **Full FreshTrack cloud UI source:** [freshtrack-app/](freshtrack-app/) — account-based dashboard, inventory, expiry alerts, FEFO/FIFO issuing, movements, reports, export/backup, Supabase config and Continue with Google.
 - **Project specification:** [PROJECT_SPEC.md](PROJECT_SPEC.md)
 - **Architecture:** [ARCHITECTURE.md](ARCHITECTURE.md)
@@ -22,7 +27,7 @@
 - **Benchmark and experiment CSVs:** [CSV results in repository root](./)
 - **C11 CI workflow and run history:** [GitHub Actions](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/workflows/ci.yml)
 
-The account-based cloud UI source is in `freshtrack-app/` and is deployed by the linked Vercel project. The primary URL above is the canonical production address; check the Vercel deployment details for the exact current commit. The secondary alias may lag behind a future release unless it is reassigned. The old Vercel project `freshtrack-inventory-legacy` is retained for rollback. Google OAuth redirect preflight has been checked, but a complete interactive sign-in and return to the dashboard has not been verified by automated tests.
+The account-based cloud UI source is in `freshtrack-app/` and is deployed by the linked Vercel project. The primary URL above is the canonical production address; check the Vercel deployment details for the exact current commit. The secondary alias may lag behind a future release unless it is reassigned. Google OAuth redirect preflight has been checked, but a complete interactive sign-in and return to the dashboard has not been verified by automated tests.
 
 ## Features
 
@@ -32,18 +37,18 @@ The account-based cloud UI source is in `freshtrack-app/` and is deployed by the
 - FIFO policy comparison using documented synthetic workloads.
 - Practical offline C inventory manager: receive batches, search, issue stock, expiry alerts, low-stock warnings, CSV import/export, settings and transaction log.
 - Optional local browser inventory website with isolated tests.
-- Account-based FreshTrack cloud UI with Supabase authentication, email/password and Continue with Google; production HTTP smoke and Google authorization redirect preflight passed. A real interactive Google consent/sign-in return has not been completed by automated tests.
-- Client-only C11 showcase demo;
+- Account-based FreshTrack cloud UI with Supabase authentication, email/password and Continue with Google; automated checks cover the UI and auth-flow contracts, but a real interactive Google consent/sign-in return still needs a manual smoke test.
+- Client-only C11 showcase demo.
 
 ## Build on Windows (PowerShell)
 
 Requirements: GCC or Clang with C11 support; Python 3 is used by the app smoke test.
 
 ```powershell
-.\build.ps1 -App
-.\build.ps1 -Test
-.\build.ps1 -AllocFail
-.\build.ps1
+.\\build.ps1 -App
+.\\build.ps1 -Test
+.\\build.ps1 -AllocFail
+.\\build.ps1
 ```
 
 ## Build and test on Linux/macOS
