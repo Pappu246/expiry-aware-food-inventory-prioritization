@@ -1,5 +1,5 @@
-# Interactive project showcase
+# C11 static showcase (non-production)
 
-This is a static, browser-only introduction to the C11 DSA project. It uses hard-coded demonstration batches and never writes to a backend. It is the public-facing showcase, not the persistent local inventory app in `../website/`.
+This folder contains a client-side FEFO/FIFO teaching demo with fixed sample batches. It does not persist stock, use the Supabase account database, or represent the production FreshTrack cloud app.
 
-The static showcase is deployed on Vercel from this folder. The current production deployment reports `READY` for main commit `f6075349866e9bc32d8172e74a7e355ab5ae8b7f` and is assigned to https://expiry-aware-food-inventory-priorit.vercel.app/. Public HTTP reachability could not be independently smoke-tested from the execution environment because external DNS resolution was unavailable.
+The account-based cloud UI and its Vercel build configuration live in [`../freshtrack-app/`](../freshtrack-app/). The optional local JSON-backed browser app lives in [`../website/`](../website/). For the canonical production URL and current release status, see the [repository README](../README.md) and the linked Vercel project.

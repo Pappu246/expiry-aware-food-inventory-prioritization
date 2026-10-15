@@ -6,7 +6,7 @@
 
 - **Interactive showcase source:** [showcase/index.html](showcase/index.html) — client-side FEFO/FIFO demo committed in this repository.
 - **Primary production URL:** https://expiry-aware-food-inventory-priorit.vercel.app/ — serves the consolidated FreshTrack Inventory cloud UI.
-- **Alternate FreshTrack URL:** https://freshtrack-inventory.vercel.app/ — currently routes to the same production deployment.
+- **Secondary FreshTrack alias:** https://freshtrack-inventory.vercel.app/ — may not automatically follow future production deployments; use the primary URL above for the canonical release.
 - **GitHub source repository:** https://github.com/Pappu246/expiry-aware-food-inventory-prioritization
 - **C11 engine source:** [src/](src/)
 - **Interactive offline inventory app:** [src/inventory_app.c](src/inventory_app.c)
@@ -22,7 +22,7 @@
 - **Benchmark and experiment CSVs:** [CSV results in repository root](./)
 - **C11 CI workflow and run history:** [GitHub Actions](https://github.com/Pappu246/expiry-aware-food-inventory-prioritization/actions/workflows/ci.yml)
 
-The cloud UI is merged on `main` and is deployed by the linked Vercel project. Both public URLs above route to the same current production deployment and serve the same FreshTrack app. The Git-connected production deployment for main commit `573873915df09393acc44d067469fd9ebb78aa99` was verified `READY` after the archive-only refresh. The original Vercel project has been renamed `freshtrack-inventory-legacy` and is retained for rollback.
+The account-based cloud UI source is in `freshtrack-app/` and is deployed by the linked Vercel project. The primary URL above is the canonical production address; check the Vercel deployment details for the exact current commit. The secondary alias may lag behind a future release unless it is reassigned. The old Vercel project `freshtrack-inventory-legacy` is retained for rollback. Google OAuth redirect preflight has been checked, but a complete interactive sign-in and return to the dashboard has not been verified by automated tests.
 
 ## Features
 
@@ -61,6 +61,6 @@ For the optional local browser application, install Node.js 18 or later and run 
 
 ## Interpretation and safety limits
 
-Benchmark and policy experiment outputs describe the documented synthetic workloads only. Timing varies by machine and compiler. The project does not prove real-world food-waste reduction, certify food safety, track storage temperature, or support concurrent multi-user stock editing. Use consistent units and follow actual product labels and local food-safety procedures.
+Benchmark and policy experiment outputs describe the documented synthetic workloads only; timing varies by machine and compiler. The project does not prove real-world food-waste reduction, certify food safety, or track storage temperature. The C11 DSA engine, local JSON-backed website, and account-based cloud UI are separate implementations and do not automatically share inventory data. Use actual product labels and food-safety procedures for operational decisions.
 
-The **showcase website** is an explanatory client-only demo and never stores actual stock. The **local inventory website** stores inventory in a local JSON file; do not publicly expose its local-only Node server as a shared production service.
+The `showcase/` directory is a client-only teaching demo with fixed sample records and no persistent storage. The `website/` directory is the local JSON-backed browser app and is intended for single-workstation use; do not expose its local Node.js server directly to the public internet. The `freshtrack-app/` directory contains the account-based Supabase cloud UI.
